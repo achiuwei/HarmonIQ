@@ -1,0 +1,20 @@
+:host {
+  --hiq-primary: #4a7c2f;
+  --hiq-primary-contrast: #ffffff;
+  --hiq-accent: #b98a2f;
+  --hiq-surface: #ffffff;
+  --hiq-surface-2: #f6f4ef;
+  --hiq-text: #22271f;
+  --hiq-muted: #6b7263;
+  --hiq-border: #dfdcd2;
+  --hiq-good: #2e8b57;
+  --hiq-warn: #d99a2b;
+  --hiq-bad: #c0392b;
+  --hiq-radius: 12px;
+  --hiq-font-display: Georgia, 'Times New Roman', serif;
+  --hiq-font-body: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  all: initial;
+  display: block;
+  font-family: var(--hiq-font-body);
+  color: var(--hiq-text);
+}
