@@ -15,10 +15,10 @@ public class ScoreMathTests
     private static LensResult Site(double score01, double coverage) => Lens(LensResult.Site, score01, coverage);
 
     private static SetScore Agg(
-        LensResult? interiors, LensResult site, int numerology = 0, Cohort? cohort = null,
+        LensResult? interiors, LensResult site, Cohort? cohort = null,
         Calibration? calibration = null, ElementBalance? elements = null,
         string principleSet = PrincipleSets.FengShui) =>
-        ScoreMath.Aggregate(principleSet, interiors, site, numerology,
+        ScoreMath.Aggregate(principleSet, interiors, site,
             cohort ?? PhotosWith, calibration ?? Calibration.Identity, elements, "summary");
 
     // ---------------- coverage-weighted aggregation ----------------
@@ -117,26 +117,31 @@ public class ScoreMathTests
         Assert.Equal(85, absentSite.Score);
     }
 
-    // ---------------- numerology ----------------
+    // ---------------- numerology (FR-20: adjusts nothing) ----------------
 
-    [Theory]
-    [InlineData(0, 74)]
-    [InlineData(2, 76)]
-    [InlineData(-2, 72)]
-    [InlineData(9, 77)]   // clamped to +3
-    [InlineData(-9, 71)]  // clamped to -3
-    public void NumerologyAdjustmentIsClampedToPlusMinusThree(int adjustment, int expected)
+    /// <summary>
+    /// FR-20 removed v1's ±3 nudge. The score must now be entirely a function of the lenses, so
+    /// this pins the exact value the old adjustment used to move: .70·.80 + .30·.60 = .74 → 74.
+    /// </summary>
+    [Fact]
+    public void ScoreIsPurelyLensDerived_NumerologyCannotMoveIt()
     {
-        var s = Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), adjustment);
-        Assert.Equal(expected, s.Score);
-        Assert.InRange(s.NumerologyAdjustment, -3, 3);
+        Assert.Equal(74, Agg(Interiors(0.80, 1.0), Site(0.60, 1.0)).Score);
     }
 
+    /// <summary>
+    /// The regression guard for FR-20: <see cref="ScoreMath.Aggregate"/> must expose no way to
+    /// pass a numerology adjustment at all. If someone reintroduces the parameter, this fails.
+    /// </summary>
     [Fact]
-    public void NumerologyDoesNotPushOutsideZeroToHundred()
+    public void AggregateExposesNoNumerologyParameter()
     {
-        Assert.Equal(100, Agg(Interiors(1.0, 1.0), Site(1.0, 1.0), 3).Score);
-        Assert.Equal(0, Agg(Interiors(0.0, 1.0), Site(0.0, 1.0), -3).Score);
+        var parameters = typeof(ScoreMath)
+            .GetMethod(nameof(ScoreMath.Aggregate))!
+            .GetParameters()
+            .Select(p => p.Name!);
+
+        Assert.DoesNotContain(parameters, p => p.Contains("numerolog", StringComparison.OrdinalIgnoreCase));
     }
 
     // ---------------- calibration ----------------
@@ -149,11 +154,11 @@ public class ScoreMathTests
             ["floorplan/without"] = new(6.0, 1.0),
         });
 
-        var calibrated = Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), 0, FloorPlanWithout, cal);
+        var calibrated = Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), FloorPlanWithout, cal);
         Assert.Equal(80, calibrated.Score);      // 74 + 6
         Assert.Equal("B+", calibrated.Grade);    // band moved because calibration ran first
 
-        var otherCohort = Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), 0, PhotosWith, cal);
+        var otherCohort = Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), PhotosWith, cal);
         Assert.Equal(74, otherCohort.Score);     // untouched cohort keeps identity constants
     }
 
@@ -161,7 +166,7 @@ public class ScoreMathTests
     public void CalibrationScaleApplies()
     {
         var cal = new Calibration(new Dictionary<string, CalibrationConstants> { ["photos/with"] = new(0.0, 0.5) });
-        Assert.Equal(37, Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), 0, PhotosWith, cal).Score);
+        Assert.Equal(37, Agg(Interiors(0.80, 1.0), Site(0.60, 1.0), PhotosWith, cal).Score);
     }
 
     [Fact]
@@ -213,8 +218,8 @@ public class ScoreMathTests
     public void SetScore_DropsElementBalanceForVastu()
     {
         var eb = new ElementBalance(40, 20, 20, 10, 10);
-        Assert.Null(Agg(Interiors(0.8, 1.0), Site(0.6, 1.0), 0, PhotosWith, null, eb, PrincipleSets.Vastu).ElementBalance);
-        Assert.NotNull(Agg(Interiors(0.8, 1.0), Site(0.6, 1.0), 0, PhotosWith, null, eb).ElementBalance);
+        Assert.Null(Agg(Interiors(0.8, 1.0), Site(0.6, 1.0), PhotosWith, null, eb, PrincipleSets.Vastu).ElementBalance);
+        Assert.NotNull(Agg(Interiors(0.8, 1.0), Site(0.6, 1.0), PhotosWith, null, eb).ElementBalance);
     }
 
     // ---------------- grade banding ----------------

@@ -3,16 +3,26 @@ using System.Text.Json.Serialization;
 
 namespace HarmonIQ.Api.Models;
 
-/// <summary>The two principle sets. There is no blended "both" score — "both" is a UI union.</summary>
+/// <summary>
+/// The principle-set wire ids — one per culture's tradition. There is no blended score: a
+/// multi-tradition view is a UI union of the stored per-set rows, never an additional score.
+///
+/// These are consts so tradition implementations can use them without triggering
+/// <c>TraditionRegistry</c>'s static initializer. <see cref="All"/> and <see cref="IsKnown"/>
+/// delegate to that registry, which is the single source of truth for which traditions exist.
+/// </summary>
 public static class PrincipleSets
 {
     public const string FengShui = "fengshui";
     public const string Vastu = "vastu";
+    public const string Pungsu = "pungsu";
+    public const string Kaso = "kaso";
+    public const string PhongThuy = "phongthuy";
 
-    public static IReadOnlyList<string> All { get; } = [FengShui, Vastu];
+    public static IReadOnlyList<string> All => Services.Traditions.TraditionRegistry.Ids;
 
     public static bool IsKnown(string? principleSet) =>
-        principleSet is FengShui or Vastu;
+        Services.Traditions.TraditionRegistry.IsKnown(principleSet);
 }
 
 /// <summary>Statuses an analysis row may carry. <c>insufficient_evidence</c> is permanent and non-retryable.</summary>
@@ -116,7 +126,13 @@ public record Calibration(IReadOnlyDictionary<string, CalibrationConstants> ByCo
 /// <summary>
 /// The deterministic per-principle-set verdict. <c>Score</c> and <c>Grade</c> are null unless
 /// <c>Status == "ok"</c> — an unscored subject is never rendered as a bad one.
-/// <c>ElementBalance</c> is Feng Shui-only and null (never five zeros) otherwise.
+///
+/// <c>ElementBalance</c> carries wǔxíng and is present only for the traditions that use it
+/// (<see cref="Services.Traditions.ITradition.UsesWuxing"/>); it is null — never five zeros —
+/// otherwise, so the report omits the section rather than showing an empty one.
+///
+/// There is deliberately <b>no numerology adjustment</b>: per FR-20 numerology is cultural
+/// annotation only and adjusts no stored score.
 /// </summary>
 public record SetScore(
     string PrincipleSet,
@@ -129,7 +145,6 @@ public record SetScore(
     Cohort Cohort,
     int? InteriorsScore,
     int? SiteScore,
-    int NumerologyAdjustment,
     ElementBalance? ElementBalance,
     string Summary,
     IReadOnlyList<RuleOutcome> Outcomes);

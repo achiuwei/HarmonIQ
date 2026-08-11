@@ -1,5 +1,6 @@
 using HarmonIQ.Api.Models;
 using HarmonIQ.Api.Services;
+using HarmonIQ.Api.Services.Traditions;
 
 namespace HarmonIQ.Tests;
 
@@ -211,16 +212,56 @@ public class SiteAnalysisServiceTests
                 Assert.DoesNotContain(banned, text, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// NFR-8: every rule sentence must attribute itself to the tradition making the claim, so a
+    /// reader never mistakes a tradition's reading for an objective statement. The needle is each
+    /// tradition's own display name, taken from the registry rather than hardcoded, so a sixth
+    /// tradition is covered the day it is added.
+    /// </summary>
     [Fact]
     public void EveryRuleTextNamesItsTradition()
     {
-        foreach (var set in PrincipleSets.All)
+        foreach (var tradition in TraditionRegistry.Ordered)
         {
-            var needle = set == PrincipleSets.Vastu ? "vastu" : "feng shui";
-            foreach (var o in AllOutcomes(set))
+            foreach (var o in AllOutcomes(tradition.Id))
             {
                 Assert.False(string.IsNullOrWhiteSpace(o.Text));
-                Assert.Contains(needle, o.Text, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains(tradition.DisplayName, o.Text, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+    }
+
+    /// <summary>Every tradition must actually have a site catalogue — none may score on interiors alone.</summary>
+    [Fact]
+    public void EveryTraditionHasANonEmptySiteCatalogue()
+    {
+        foreach (var tradition in TraditionRegistry.Ordered)
+        {
+            Assert.NotEmpty(_svc.EvaluateSet(FullyKnown(), Facing("north"), tradition.Id).Outcomes);
+        }
+    }
+
+    /// <summary>
+    /// Rule ids must not collide across traditions: report rendering resolves a title by asking
+    /// each tradition in turn, so a shared id would render one tradition's rule under another's
+    /// title.
+    /// </summary>
+    [Fact]
+    public void RuleIdsAreDisjointAcrossTraditions()
+    {
+        var seen = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var tradition in TraditionRegistry.Ordered)
+        {
+            foreach (var o in AllOutcomes(tradition.Id))
+            {
+                if (seen.TryGetValue(o.RuleId, out var owner))
+                {
+                    Assert.Equal(tradition.Id, owner);
+                }
+                else
+                {
+                    seen[o.RuleId] = tradition.Id;
+                }
             }
         }
     }
@@ -241,31 +282,31 @@ public class SiteAnalysisServiceTests
     [Fact]
     public void VastuGate_RequiresResolvedOrientation()
     {
-        Assert.False(VastuGate.CanScore(PrincipleSets.Vastu, (SubjectOrientation?)null));
-        Assert.False(VastuGate.CanScore(PrincipleSets.Vastu, Unresolved()));
-        Assert.True(VastuGate.CanScore(PrincipleSets.Vastu, Facing("north")));
+        Assert.False(OrientationGate.CanScore(PrincipleSets.Vastu, (SubjectOrientation?)null));
+        Assert.False(OrientationGate.CanScore(PrincipleSets.Vastu, Unresolved()));
+        Assert.True(OrientationGate.CanScore(PrincipleSets.Vastu, Facing("north")));
     }
 
     [Fact]
     public void VastuGate_DoesNotGateFengShui()
     {
-        Assert.True(VastuGate.CanScore(PrincipleSets.FengShui, (SubjectOrientation?)null));
-        Assert.True(VastuGate.CanScore(PrincipleSets.FengShui, Unresolved()));
+        Assert.True(OrientationGate.CanScore(PrincipleSets.FengShui, (SubjectOrientation?)null));
+        Assert.True(OrientationGate.CanScore(PrincipleSets.FengShui, Unresolved()));
     }
 
     [Fact]
     public void VastuGate_AlsoReadsTheCohortOrientationPath()
     {
-        Assert.False(VastuGate.CanScore(PrincipleSets.Vastu, new Cohort(Cohort.Photos, Cohort.Without)));
-        Assert.True(VastuGate.CanScore(PrincipleSets.Vastu, new Cohort(Cohort.Photos, Cohort.With)));
-        Assert.True(VastuGate.CanScore(PrincipleSets.FengShui, new Cohort(Cohort.FloorPlan, Cohort.Without)));
+        Assert.False(OrientationGate.CanScore(PrincipleSets.Vastu, new Cohort(Cohort.Photos, Cohort.Without)));
+        Assert.True(OrientationGate.CanScore(PrincipleSets.Vastu, new Cohort(Cohort.Photos, Cohort.With)));
+        Assert.True(OrientationGate.CanScore(PrincipleSets.FengShui, new Cohort(Cohort.FloorPlan, Cohort.Without)));
     }
 
     [Fact]
     public void CohortForRecordsTheOrientationPath()
     {
-        Assert.Equal("floorplan/without", VastuGate.CohortFor(Cohort.FloorPlan, null).ToString());
-        Assert.Equal("photos/with", VastuGate.CohortFor(Cohort.Photos, Facing("west")).ToString());
-        Assert.Equal("photos/without", VastuGate.CohortFor(Cohort.Photos, Unresolved()).ToString());
+        Assert.Equal("floorplan/without", OrientationGate.CohortFor(Cohort.FloorPlan, null).ToString());
+        Assert.Equal("photos/with", OrientationGate.CohortFor(Cohort.Photos, Facing("west")).ToString());
+        Assert.Equal("photos/without", OrientationGate.CohortFor(Cohort.Photos, Unresolved()).ToString());
     }
 }

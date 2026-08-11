@@ -190,16 +190,16 @@ public class AnalysisPipelineTests : IDisposable
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
-        Assert.Equal(2, analyses.Count);
+        Assert.Equal(PrincipleSets.All.Count, analyses.Count);
         Assert.Equal(
-            new[] { PrincipleSets.FengShui, PrincipleSets.Vastu }.Order(),
+            PrincipleSets.All.Order(),
             analyses.Select(a => a.PrincipleSet).Order());
         Assert.All(analyses, a => Assert.Equal("demo", a.Mode));
         Assert.All(analyses, a => Assert.Equal(Cohort.FloorPlan, a.CohortEvidencePath));
         Assert.All(analyses, a => Assert.Equal("fp-sample-multiplan:rk-101-o", a.InputFingerprint));
 
         // Report bodies were written under the fixed key convention.
-        Assert.Equal(2, store.Items.Count);
+        Assert.Equal(PrincipleSets.All.Count, store.Items.Count);
         Assert.Contains("reports/e1/sample-multiplan:rk-101/fengshui.json.gz", store.Items.Keys);
         Assert.All(analyses, a => Assert.False(string.IsNullOrWhiteSpace(a.ReportSha256)));
 
@@ -297,7 +297,7 @@ public class AnalysisPipelineTests : IDisposable
 
         Assert.Equal(1, await db.Observations.CountAsync());
         Assert.Equal(1, lens.Calls);
-        Assert.Equal(2, await db.Analyses.CountAsync());
+        Assert.Equal(PrincipleSets.All.Count, await db.Analyses.CountAsync());
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public class AnalysisPipelineTests : IDisposable
 
         await pipeline.RunAsync(subject, inputSet, Engine("e1"), live: false, default);
         var before = await db.Analyses.AsNoTracking().ToListAsync();
-        Assert.Equal(2, before.Count);
+        Assert.Equal(PrincipleSets.All.Count, before.Count);
 
         // Bump the engine AND both rules versions, then re-derive with a lens that throws if asked.
         var throwing = new ThrowingLens();
@@ -330,13 +330,13 @@ public class AnalysisPipelineTests : IDisposable
         var rederived = await bumpedPipeline.RederiveAsync(subject, inputSet, bumped, default);
 
         Assert.Equal(0, throwing.Calls);
-        Assert.Equal(2, rederived.Count);
+        Assert.Equal(PrincipleSets.All.Count, rederived.Count);
         Assert.All(rederived, a => Assert.Equal("e2", a.EngineVersion));
         Assert.Contains(rederived, a => a.RulesVersion == "fengshui-2.1");
         Assert.Contains(rederived, a => a.RulesVersion == "vastu-2.1");
 
         // New (subject, set, rulesVersion) rows alongside the originals; still one observation.
-        Assert.Equal(4, await db.Analyses.CountAsync());
+        Assert.Equal(PrincipleSets.All.Count * 2, await db.Analyses.CountAsync());
         Assert.Equal(1, await db.Observations.CountAsync());
     }
 
@@ -392,7 +392,7 @@ public class AnalysisPipelineTests : IDisposable
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
-        Assert.Equal(2, analyses.Count);
+        Assert.Equal(PrincipleSets.All.Count, analyses.Count);
         Assert.Equal(2, await db.Observations.CountAsync()); // one call per photo, not per set
         Assert.All(analyses, a => Assert.Equal(Cohort.Photos, a.CohortEvidencePath));
 
@@ -401,9 +401,10 @@ public class AnalysisPipelineTests : IDisposable
         Assert.NotNull(fengshui.ElementBalanceJson);
         Assert.Null(vastu.ElementBalanceJson);
 
-        // Numerology nudges, never drives: unit 404 reads as inauspicious in both traditions.
-        Assert.NotNull(fengshui.NumerologyAdjustment);
-        Assert.True(fengshui.NumerologyAdjustment < 0);
+        // FR-20: numerology annotates, never adjusts. Unit 404 still reads as inauspicious on
+        // the Numbers card, but no adjustment is persisted against the grade.
+        Assert.Null(fengshui.NumerologyAdjustment);
+        Assert.Null(vastu.NumerologyAdjustment);
     }
 
     [Fact]

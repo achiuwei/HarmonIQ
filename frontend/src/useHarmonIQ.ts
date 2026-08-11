@@ -18,7 +18,7 @@ export function defaultRefinement(listing: Listing): Refinement {
   return {
     photos: listing.photos.filter(p => p.selected)
       .map(p => ({ photoId: p.photoId, roomType: p.suggestedRoomType })),
-    systems: 'both',
+    systems: 'all',
     orientation: 'unknown',
     environment: listing.environment,
     numbers: listing.numbers,

@@ -1,6 +1,33 @@
 import { apiUrl } from './base';
 
-export type Systems = 'both' | 'fengshui' | 'vastu';
+/**
+ * A tradition's wire id. Kept as a widened string rather than a closed union so the UI is driven
+ * by the ids the API actually returns — the day the backend adds a sixth tradition, nothing here
+ * needs to change.
+ */
+export type PrincipleSet = 'fengshui' | 'vastu' | 'pungsu' | 'kaso' | 'phongthuy' | (string & {});
+
+/**
+ * The renter's tradition selection. `'all'` replaces the old `'both'`, which was a two-tradition
+ * encoding — there is still no blended score, only a union of the stored per-set rows.
+ */
+export type Systems = 'all' | PrincipleSet;
+
+/** Display metadata for a tradition id. Unknown ids fall back to the title-cased id, sorted last. */
+export const TRADITIONS: ReadonlyArray<{ id: PrincipleSet; label: string; culture: string }> = [
+  { id: 'fengshui', label: 'Feng Shui', culture: 'Chinese' },
+  { id: 'vastu', label: 'Vastu Shastra', culture: 'Indian' },
+  { id: 'pungsu', label: 'Pungsu-jiri', culture: 'Korean' },
+  { id: 'kaso', label: 'Kasō', culture: 'Japanese' },
+  { id: 'phongthuy', label: 'Phong Thủy', culture: 'Vietnamese' },
+];
+
+/** With no renter preference the surfaces show these two — today's visual weight, unchanged. */
+export const DEFAULT_SETS: readonly PrincipleSet[] = ['fengshui', 'vastu'];
+
+export const traditionLabel = (id: string): string =>
+  TRADITIONS.find(t => t.id === id)?.label
+  ?? id.charAt(0).toUpperCase() + id.slice(1);
 export type Severity = 'minor' | 'moderate' | 'major';
 export type Level = 'low' | 'medium' | 'high';
 

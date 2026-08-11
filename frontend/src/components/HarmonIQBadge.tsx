@@ -40,7 +40,7 @@ export function HarmonIQBadge({ phase, report, error, expanded, onToggle }: Badg
         style={{ font: 'inherit' }}>
         <span className="hiq-badge-info">
           <span className="hiq-badge-logo">HarmonIQ Score</span>
-          <span className="hiq-badge-tagline">Feng Shui &amp; Vastu harmony</span>
+          <span className="hiq-badge-tagline">Cultural harmony across five traditions</span>
         </span>
         {loading ? (
           <span className="hiq-badge-value">

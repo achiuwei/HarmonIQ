@@ -6,8 +6,13 @@ public static class Prompts
 {
     /// <summary>
     /// Bumping this invalidates observations. Nothing else in the codebase defines a prompt version.
+    ///
+    /// v3.0 — the perception/interpretation split. The room tool changed from
+    /// <c>record_room_observation</c> (tradition-tagged findings + elementBalance) to
+    /// <c>record_room_perception</c> (untagged facts + materials), so a v2.0 observation cannot be
+    /// read against the new shape and MUST NOT be reused. This bump is what forces re-perception.
     /// </summary>
-    public const string PromptVersion = "v2.0";
+    public const string PromptVersion = "v3.0";
 
     /// <summary>
     /// Phrases that must never appear in any prompt or rule text (design §10 / NFR-8).
@@ -18,38 +23,71 @@ public static class Prompts
     };
 
     /// <summary>
-    /// Tradition-agnostic room-photo system prompt. One vision call records every finding it can
-    /// see, tagged with the tradition it belongs to ("fengshui", "vastu", or "both"); tradition
-    /// FILTERING moves to score time, which is what lets a single call serve both principle sets
-    /// and halves the model bill (design §2). This is the v2 contract — no `systems` parameter.
+    /// The stage-1 room-photo perception prompt. Tradition-agnostic and, unlike v2.0, it does not
+    /// tag findings with a tradition at all — with five traditions the old
+    /// <c>"fengshui" | "vastu" | "both"</c> tag has no meaning ("both" was a two-tradition
+    /// encoding).
+    ///
+    /// This call records <b>what is physically there</b>; every tradition's reading of it happens
+    /// in stage 3, where each culture has its own prompt over this same shared record. That keeps
+    /// vision spend at 1× however many traditions are scored, and — more importantly — guarantees
+    /// all five reason over identical evidence, so a score difference is attributable to the
+    /// tradition rather than to what one call happened to notice.
+    ///
+    /// Because a fact this pass fails to record is unavailable to every interpreter downstream,
+    /// the instruction is deliberately to over-record: note the fact even when its significance
+    /// is unclear.
     /// </summary>
-    public static string RoomSystemPrompt(string? orientationHint)
+    public static string RoomPerceptionPrompt(string? orientationHint)
     {
         var orient = string.IsNullOrWhiteSpace(orientationHint) || orientationHint == "unknown"
-            ? "The unit's entrance orientation is unknown — skip principles that require compass directions rather than guessing."
-            : $"The unit's entrance faces {orientationHint} — you may apply directional principles relative to that.";
+            ? "The unit's entrance orientation is unknown. Do not guess or infer compass directions; describe positions relative to the room itself."
+            : $"The unit's entrance faces {orientationHint}. Where you can place something relative to that facing, say so.";
         return $"""
-You are HarmonIQ, an expert consultant recording what a single apartment room photo shows, for
-later grading against both Feng Shui (form school and Black Hat) and Vastu Shastra. Tag every
-finding with the tradition it comes from: "fengshui", "vastu", or "both" when the finding is
-shared by both traditions. Record every finding you can support from the image — do not decide
-which tradition the renter cares about; that filtering happens later, downstream of this call.
+You are HarmonIQ's perception pass. Record what a single apartment room photo physically shows.
+
+You are NOT evaluating the room. Do not say whether anything is auspicious, harmonious, good, or
+bad, and do not name or apply any tradition. Five different cultural traditions will each read your
+record afterwards, and each must be free to draw its own conclusion from it.
 {orient}
 
+Record, as plainly and concretely as you can:
+- Room type, and the furniture present with its position relative to the room's door(s) and window(s)
+  ("the bed's headboard is against the wall shared with the door, foot pointing at the window").
+- Sightlines: what is directly in line with the door; whether an unobstructed line runs from the
+  door through the room to a window or another door.
+- Bed, desk, and stove placement specifically: what each faces, what is behind it, whether the
+  door is visible from it, whether anything overhangs it (beam, shelf, sloped ceiling).
+- Mirrors and other reflective surfaces: size, what each faces.
+- Adjacencies you can actually see: which rooms open onto which; whether a bathroom or kitchen is
+  visible from where someone sleeps or eats.
+- Sharp corners, exposed beams, columns, or hard edges, and what they point toward.
+- Clutter, visible storage, and whether circulation paths are blocked; under-bed storage.
+- Natural light: how many windows, their size, and how much of the room reads as lit.
+- Dominant materials, colours, and shapes (wood, metal, glass, stone, textile; round, angular).
+- Whether furnishings are paired or symmetrical.
+- The centre of the room: whether it is open or occupied.
+
 Hard rules:
-- Reference ONLY what is actually visible in the photo. Never invent furniture, windows, or directions you cannot see.
-- Findings to look for include: commanding position (bed/desk/stove), chi flow and clutter, five-element balance, mirror placement, bed under window or beam, under-bed storage, pairs and symmetry, natural light, poison arrows (sharp corners aimed at seating/bed); for Vastu: room-appropriate colors, heavy furniture placement, openness of the center, water element placement, sleep/work orientation.
-- Tag every finding's tradition ("fengshui", "vastu", or "both") and give it a confidence between 0 and 1 reflecting how clearly the photo supports it.
-- Estimate the five-element balance (wood/fire/earth/metal/water, each 0-100) only when the room supports a Feng Shui reading; omit it otherwise.
-- Return 2-4 findings and 2-4 suggestions.
-- Every suggestion must be renter-feasible: rearranging furniture, decor, plants, mirrors, textiles, lighting. Never structural work.
-- Phrase observations concretely, naming the visible objects ("the wardrobe mirror directly faces the bed").
-- Frame every tradition-based reading as belonging to that tradition, never as an objective claim about safety, health, or value. Never use negative superlatives — describe the configuration and the tradition's reading of it, without judging the unit itself.
-- Record your analysis by calling the record_room_observation tool. If the room type was provided, keep it; otherwise identify it from the image.
+- Reference ONLY what is actually visible. Never invent furniture, windows, adjacencies, or
+  directions you cannot see. Omission is always better than a guess.
+- Record a fact even when you are unsure whether it matters. A fact you leave out cannot be
+  recovered by any later pass.
+- Give every observation a confidence between 0 and 1 reflecting how clearly the photo supports it.
+- Do not use evaluative language. "The mirror faces the foot of the bed" — not "the mirror
+  unfortunately faces the bed".
+- Record your observations by calling the record_room_perception tool. If the room type was
+  provided, keep it; otherwise identify it from the image.
 """;
     }
 
-    private static readonly object RoomFindingItem = new
+    /// <summary>
+    /// A stage-1 fact. Deliberately carries <b>no</b> <c>tradition</c> field: perception records
+    /// what is there, and every tradition reads the same record in stage 3. The old
+    /// <c>"fengshui" | "vastu" | "both"</c> enum was a two-tradition encoding with no meaning
+    /// across five.
+    /// </summary>
+    private static readonly object RoomFactItem = new
     {
         type = "object",
         properties = new
@@ -57,27 +95,56 @@ Hard rules:
             ruleId = new { type = "string" },
             principle = new { type = "string" },
             observation = new { type = "string" },
-            tradition = new { type = "string", @enum = new[] { "fengshui", "vastu", "both" } },
             confidence = new { type = "number", minimum = 0, maximum = 1 },
-            severity = new { type = "string", @enum = new[] { "minor", "moderate", "major" } },
         },
-        required = new[] { "ruleId", "principle", "observation", "tradition", "confidence" },
+        required = new[] { "ruleId", "principle", "observation", "confidence" },
     };
 
     /// <summary>
-    /// Forced tool `record_room_observation`. Tradition-agnostic: no `systems` parameter — every
-    /// finding is self-tagged with its tradition. `elementBalance` is optional (Feng-Shui-only).
+    /// Forced tool `record_room_perception`. Facts only — no tradition tags, no severities (a
+    /// severity is a judgement, and this pass makes none), and no `elementBalance`: wǔxíng is a
+    /// reading, not an observation, and Vastu's pancha bhuta are a different five entirely, so
+    /// each tradition derives its own in stage 3 from the recorded materials and colours.
     /// </summary>
-    public static readonly object RoomTool = new
+    public static readonly object RoomPerceptionTool = new
     {
-        name = "record_room_observation",
-        description = "Record the structured, tradition-tagged observation of one room photo.",
+        name = "record_room_perception",
+        description = "Record the plain, non-evaluative facts one room photo shows.",
         input_schema = new
         {
             type = "object",
             properties = new
             {
                 roomType = new { type = "string" },
+                facts = new { type = "array", minItems = 0, maxItems = 20, items = RoomFactItem },
+                materials = new
+                {
+                    type = "array", maxItems = 12,
+                    items = new { type = "string" },
+                    description = "Dominant materials, colours, and shapes, e.g. \"pale oak floor\", \"black metal frames\", \"round glass table\".",
+                },
+                coverage = new { type = "number", minimum = 0, maximum = 1 },
+            },
+            required = new[] { "roomType", "facts", "coverage" },
+        },
+    };
+
+    /// <summary>
+    /// Forced tool `record_interpretation` — the stage-3 output, shared by all five traditions.
+    ///
+    /// The <b>schema</b> is common on purpose so scores stay comparable; what differs per culture
+    /// is the prompt driving it (<c>ITradition.InterpretPrompt</c>). <c>elementBalance</c> is
+    /// optional because only the wǔxíng traditions report one; Vastu omits it rather than zeroing.
+    /// </summary>
+    public static readonly object InterpretationTool = new
+    {
+        name = "record_interpretation",
+        description = "Record one tradition's reading of the shared fact sheet.",
+        input_schema = new
+        {
+            type = "object",
+            properties = new
+            {
                 elementBalance = new
                 {
                     type = "object",
@@ -91,7 +158,23 @@ Hard rules:
                     },
                     required = new[] { "wood", "fire", "earth", "metal", "water" },
                 },
-                findings = new { type = "array", minItems = 0, maxItems = 8, items = RoomFindingItem },
+                findings = new
+                {
+                    type = "array", minItems = 0, maxItems = 8,
+                    items = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            ruleId = new { type = "string" },
+                            principle = new { type = "string" },
+                            observation = new { type = "string" },
+                            confidence = new { type = "number", minimum = 0, maximum = 1 },
+                            severity = new { type = "string", @enum = new[] { "minor", "moderate", "major" } },
+                        },
+                        required = new[] { "ruleId", "principle", "observation", "confidence" },
+                    },
+                },
                 suggestions = new
                 {
                     type = "array", minItems = 0, maxItems = 4,
@@ -110,8 +193,8 @@ Hard rules:
                 },
                 coverage = new { type = "number", minimum = 0, maximum = 1 },
             },
-            // Note: elementBalance is deliberately NOT required — it is Feng-Shui-only.
-            required = new[] { "roomType", "findings", "suggestions", "coverage" },
+            // elementBalance is deliberately NOT required — only wǔxíng traditions report one.
+            required = new[] { "findings", "suggestions", "coverage" },
         },
     };
 
@@ -171,7 +254,14 @@ Other rules:
             ruleId = new { type = "string", @enum = FloorPlanRules.AllowedRuleIds },
             principle = new { type = "string" },
             observation = new { type = "string" },
-            tradition = new { type = "string", @enum = new[] { "fengshui", "vastu", "both" } },
+            // "both" predates the five-tradition model and now means "shared by every tradition".
+            // It stays because floor-plan findings are adjacency facts, which genuinely are shared,
+            // and because observations recorded under the two-tradition contract still carry it.
+            tradition = new
+            {
+                type = "string",
+                @enum = new[] { "both", "fengshui", "vastu", "pungsu", "kaso", "phongthuy" },
+            },
             confidence = new { type = "number", minimum = 0, maximum = 1 },
             severity = new { type = "string", @enum = new[] { "minor", "moderate", "major" } },
         },

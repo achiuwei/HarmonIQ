@@ -20,14 +20,16 @@ public static class ScoreMath
     public const double SiteWeight = 0.30;
     public const double ConfidenceFloor = 0.5;
 
-    /// <summary>Numerology may nudge a score, never drive it.</summary>
-    public const int MaxNumerologyAdjustment = 3;
-
+    /// <summary>
+    /// Aggregates one tradition's lenses into a stored verdict.
+    ///
+    /// Numerology is deliberately not a parameter: per FR-20 it adjusts no stored score and is
+    /// cultural annotation only. v1's ±3 nudge is gone — do not reintroduce it.
+    /// </summary>
     public static SetScore Aggregate(
         string principleSet,
         LensResult? interiors,
         LensResult site,
-        int numerologyAdjustment,
         Cohort cohort,
         Calibration calibration,
         ElementBalance? elements,
@@ -45,9 +47,9 @@ public static class ScoreMath
         var denominator = InteriorsWeight * interiorsCoverage + SiteWeight * siteCoverage;
 
         var confidence = Math.Round(denominator, 10);
-        var adjustment = Math.Clamp(numerologyAdjustment, -MaxNumerologyAdjustment, MaxNumerologyAdjustment);
-        // ElementBalance is Feng Shui-only; the report omits the section rather than showing zeros.
-        var elementBalance = principleSet == PrincipleSets.Vastu ? null : elements;
+        // Wǔxíng belongs only to the traditions that use it; the report omits the section
+        // rather than showing zeros for the ones that do not.
+        var elementBalance = ElementsFor(principleSet, elements);
 
         var outcomes = new List<RuleOutcome>();
         if (interiors is not null) outcomes.AddRange(interiors.Outcomes);
@@ -56,22 +58,25 @@ public static class ScoreMath
         var interiorsScore = LensScore100(interiors);
         var siteScore = LensScore100(site);
 
-        // Vastu without a resolved facing is gated, not renormalized (design §2).
-        var gated = !VastuGate.CanScore(principleSet, cohort);
+        // An orientation-gated tradition with no facing is gated, not renormalized (design §2).
+        var gated = !OrientationGate.CanScore(principleSet, cohort);
         if (gated || denominator <= 0 || confidence < ConfidenceFloor)
             return new SetScore(principleSet, AnalysisStatuses.InsufficientEvidence, null, null,
                 confidence, interiorsCoverage, siteCoverage, cohort,
-                interiorsScore, siteScore, adjustment, elementBalance, summary, outcomes);
+                interiorsScore, siteScore, elementBalance, summary, outcomes);
 
         var raw100 = 100.0 * numerator / denominator;
         var calibrated = calibration.For(cohort).Apply(raw100);
-        var final = Math.Clamp(
-            (int)Math.Round(calibrated, MidpointRounding.AwayFromZero) + adjustment, 0, 100);
+        var final = Math.Clamp((int)Math.Round(calibrated, MidpointRounding.AwayFromZero), 0, 100);
 
         return new SetScore(principleSet, AnalysisStatuses.Ok, final, Grade(final),
             confidence, interiorsCoverage, siteCoverage, cohort,
-            interiorsScore, siteScore, adjustment, elementBalance, summary, outcomes);
+            interiorsScore, siteScore, elementBalance, summary, outcomes);
     }
+
+    /// <summary>Null for any tradition that does not read wǔxíng — never five zeros.</summary>
+    private static ElementBalance? ElementsFor(string principleSet, ElementBalance? elements) =>
+        Traditions.TraditionRegistry.Find(principleSet)?.UsesWuxing == true ? elements : null;
 
     public static string Grade(int score) => score switch
     {
@@ -83,13 +88,14 @@ public static class ScoreMath
     };
 
     /// <summary>
-    /// Mean element balance across the rooms that actually reported one. Returns <b>null</b>
-    /// for Vastu (the concept is Feng Shui's) and null when no room reported — never five zeros.
+    /// Mean element balance across the rooms that actually reported one. Returns <b>null</b> for
+    /// traditions that do not read wǔxíng — Vastu's pancha bhuta are a different five and do not
+    /// map onto this shape — and null when no room reported. Never five zeros.
     /// </summary>
     public static ElementBalance? AverageElements(
         IEnumerable<ElementBalance?> perRoom, string principleSet = PrincipleSets.FengShui)
     {
-        if (principleSet == PrincipleSets.Vastu) return null;
+        if (Traditions.TraditionRegistry.Find(principleSet)?.UsesWuxing != true) return null;
         var reported = perRoom.Where(e => e is not null && !e.IsAllZero).Select(e => e!).ToList();
         if (reported.Count == 0) return null;
         return new ElementBalance(

@@ -35,8 +35,8 @@ public class CohortMatrixTests
     {
         var orientation = orientationPath == Cohort.With ? Facing("north") : null;
         var site = _svc.EvaluateSet(Env, orientation, principleSet);
-        var cohort = VastuGate.CohortFor(evidencePath, orientation);
-        return ScoreMath.Aggregate(principleSet, Interiors(evidencePath), site, 0,
+        var cohort = OrientationGate.CohortFor(evidencePath, orientation);
+        return ScoreMath.Aggregate(principleSet, Interiors(evidencePath), site,
             cohort, Calibration.Identity, null, "summary");
     }
 
@@ -125,9 +125,9 @@ public class CohortMatrixTests
             Enumerable.Range(0, 12).Select(i => new RuleOutcome($"h{i}", PrincipleSets.FengShui, true, i < 8, 1, "t")).ToList());
 
         var site = _svc.EvaluateSet(Env, Facing("north"), PrincipleSets.FengShui);
-        var a = ScoreMath.Aggregate(PrincipleSets.FengShui, plan, site, 0,
+        var a = ScoreMath.Aggregate(PrincipleSets.FengShui, plan, site,
             new Cohort(Cohort.FloorPlan, Cohort.With), Calibration.Identity, null, "s");
-        var b = ScoreMath.Aggregate(PrincipleSets.FengShui, photos, site, 0,
+        var b = ScoreMath.Aggregate(PrincipleSets.FengShui, photos, site,
             new Cohort(Cohort.Photos, Cohort.With), Calibration.Identity, null, "s");
 
         Assert.Equal(b.Score, a.Score);

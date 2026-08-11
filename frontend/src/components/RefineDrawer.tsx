@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Listing, SideEnvironment, Systems,
+  Listing, SideEnvironment, Systems, TRADITIONS, traditionLabel,
 } from '../api';
 import { apiUrl } from '../base';
 import { Refinement } from '../useHarmonIQ';
@@ -118,11 +118,13 @@ export function RefineDrawer({ listing, refinement, onApply, onClose }: RefineDr
           onChange={e => setDraft(d => ({ ...d, orientation: e.target.value }))}>
           {ORIENTATIONS.map(o => <option key={o}>{o}</option>)}
         </select>
+        {/* Driven by TRADITIONS rather than a literal list, so a sixth tradition needs no edit here. */}
         <span className="hiq-seg">
-          {(['both', 'fengshui', 'vastu'] as Systems[]).map(s => (
+          {(['all', ...TRADITIONS.map(t => t.id)] as Systems[]).map(s => (
             <button key={s} type="button" className={draft.systems === s ? 'on' : ''}
-              onClick={() => setDraft(d => ({ ...d, systems: s }))}>
-              {s === 'both' ? 'Both' : s === 'fengshui' ? 'Feng Shui' : 'Vastu'}
+              onClick={() => setDraft(d => ({ ...d, systems: s }))}
+              title={s === 'all' ? 'Every tradition' : TRADITIONS.find(t => t.id === s)?.culture}>
+              {s === 'all' ? 'All' : traditionLabel(s)}
             </button>
           ))}
         </span>

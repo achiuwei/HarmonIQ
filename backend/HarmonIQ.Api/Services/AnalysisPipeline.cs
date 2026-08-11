@@ -8,9 +8,15 @@ namespace HarmonIQ.Api.Services;
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 //  Perception / judgment split (design §5)
 //
-//  PERCEPTION is expensive and cached: one tradition-agnostic vision call per evidence item,
-//  stored in `observations` keyed (SubjectId, EvidenceHash, PromptVersion, ModelId). It knows
-//  nothing about principle sets, rules versions, orientation, or numbers.
+//  PERCEPTION is expensive and cached, and runs in two stages:
+//    1. one tradition-agnostic VISION call per evidence item, recording plain facts and taking no
+//       view — so vision spend stays at 1x however many traditions are scored; then
+//    2. one text INTERPRETATION call per tradition over the single assembled fact sheet, each
+//       driven by that culture's own prompt (ITradition.InterpretPrompt).
+//  Both are stored in `observations` keyed (SubjectId, EvidenceHash, PromptVersion, ModelId).
+//  Because all traditions read identical evidence, a difference between two traditions' scores is
+//  attributable to the traditions themselves, not to what one call happened to notice.
+//  Stage 2 is live-only: the demo path's fixtures carry tagged findings and make no model call.
 //
 //  JUDGMENT is cheap and deterministic: `AnalysisDerivation` is a PURE function of
 //  (stored observations + environment + orientation + numbers + calibration) → per-set SetScore.
@@ -23,13 +29,23 @@ namespace HarmonIQ.Api.Services;
 /// The stored shape of one observation row's payload. A discriminated envelope so the photo path
 /// and the floor-plan path share one table without either pretending to be the other.
 /// </summary>
-public record ObservationPayload(string Kind, RoomObservation? Room, FloorPlanObservation? Plan)
+public record ObservationPayload(
+    string Kind,
+    RoomObservation? Room,
+    FloorPlanObservation? Plan,
+    TraditionInterpretation? Interpretation = null)
 {
     public const string RoomKind = "room";
     public const string PlanKind = "floorplan";
 
+    /// <summary>Stage-3: one tradition's reading of the shared fact sheet. One row per tradition.</summary>
+    public const string InterpretationKind = "interpretation";
+
     public static ObservationPayload ForRoom(RoomObservation room) => new(RoomKind, room, null);
     public static ObservationPayload ForPlan(FloorPlanObservation plan) => new(PlanKind, null, plan);
+
+    public static ObservationPayload ForInterpretation(TraditionInterpretation interpretation) =>
+        new(InterpretationKind, null, null, interpretation);
 }
 
 /// <summary>One evidence item named by the immutable input set. <c>Kind</c> is "plan" or "photo".</summary>
@@ -231,20 +247,26 @@ public static class AnalysisDerivation
         var interiors = InteriorsLens(principleSet, input);
         var siteLens = site.EvaluateSet(input.Environment, input.Orientation, principleSet);
         var numerology = input.NumerologyBySet.TryGetValue(principleSet, out var n) ? n : new NumerologyResult(0, []);
-        var suggestions = Suggestions(input);
+        var suggestions = Suggestions(input, principleSet);
 
-        // ElementBalance is Feng-Shui-only AND materials-only: a line drawing has no materials, so
-        // the floor-plan path never reports one. Never five zeros — the section is omitted instead.
+        // ElementBalance is materials-only: a line drawing has no materials, so the floor-plan path
+        // never reports one. Never five zeros — the section is omitted instead. Prefer this
+        // tradition's own reading (each wǔxíng tradition derives its own from the shared
+        // materials list); fall back to the demo path's precomputed per-room balances.
+        var interpretation = Interpretation(input, principleSet);
         var elements = input.EvidencePath == Cohort.FloorPlan
             ? null
-            : ScoreMath.AverageElements(Rooms(input).Select(r => r.ElementBalance), principleSet);
+            : interpretation?.ElementBalance
+              ?? ScoreMath.AverageElements(Rooms(input).Select(r => r.ElementBalance), principleSet);
 
-        var cohort = VastuGate.CohortFor(input.EvidencePath, input.Orientation);
+        var cohort = OrientationGate.CohortFor(input.EvidencePath, input.Orientation);
         var summary = LocalSummary.Build(principleSet, interiors, siteLens, suggestions, numerology);
 
+        // Numerology is deliberately absent from the aggregation: per FR-20 it is cultural
+        // annotation only and adjusts no stored score. It still reaches the report body's
+        // Numbers card (FR-19) via derived.Numerology — display, never grade.
         var score = ScoreMath.Aggregate(
-            principleSet, interiors, siteLens, numerology.ScoreAdjustment,
-            cohort, input.Calibration, elements, summary);
+            principleSet, interiors, siteLens, cohort, input.Calibration, elements, summary);
 
         if (score.Status != AnalysisStatuses.Ok)
         {
@@ -308,16 +330,48 @@ public static class AnalysisDerivation
         return new LensResult(LensResult.Interiors, RuleEvaluation.NormalizedScore(outcomes), coverage, outcomes);
     }
 
+    /// <summary>
+    /// The interiors lens for one tradition.
+    ///
+    /// Prefers this tradition's own stage-3 interpretation, which is what makes five traditions
+    /// genuinely differ: each read the same shared fact sheet through its own prompt. Falls back
+    /// to tradition-tagged findings recorded on the room observations themselves — the demo/mock
+    /// path and any observation predating the interpretation stage.
+    /// </summary>
     private static LensResult? RoomLens(string principleSet, DerivationInput input)
     {
         var rooms = Rooms(input);
         if (rooms.Count == 0) return null;
+
+        // Coverage comes from perception either way: it measures how much the photographs showed,
+        // which is a property of the evidence, not of the tradition reading it.
+        var perceptionCoverage = Math.Clamp(rooms.Average(r => r.Coverage), 0.0, 1.0);
+
+        if (Interpretation(input, principleSet) is { } interpretation)
+        {
+            var interpreted = interpretation.Findings
+                .Where(f => f.Confidence >= FindingConfidenceFloor)
+                .Select(f => new RuleOutcome(
+                    f.RuleId, principleSet, true, f.Severity is null, Weight(f.Severity), f.Observation))
+                .ToList();
+
+            var covered = Math.Clamp(perceptionCoverage * Math.Clamp(interpretation.Coverage, 0.0, 1.0), 0.0, 1.0);
+            return new LensResult(
+                LensResult.Interiors,
+                RuleEvaluation.NormalizedScore(interpreted),
+                interpreted.Count == 0 ? 0.0 : covered,
+                interpreted);
+        }
 
         var outcomes = new List<RuleOutcome>();
         foreach (var room in rooms)
         {
             foreach (var finding in room.Findings)
             {
+                // A blank tradition is an untagged perception fact, not a reading. It renders on
+                // the room card but must not score, or every tradition would inherit the same
+                // undifferentiated findings.
+                if (string.IsNullOrWhiteSpace(finding.Tradition)) continue;
                 if (!Matches(finding.Tradition, principleSet)) continue;
                 if (finding.Confidence < FindingConfidenceFloor) continue;
                 outcomes.Add(new RuleOutcome(
@@ -327,11 +381,17 @@ public static class AnalysisDerivation
         }
 
         // No findings this tradition can read ⇒ no coverage, not a zero score.
-        var coverage = outcomes.Count == 0
-            ? 0.0
-            : Math.Clamp(rooms.Average(r => r.Coverage), 0.0, 1.0);
-        return new LensResult(LensResult.Interiors, RuleEvaluation.NormalizedScore(outcomes), coverage, outcomes);
+        var fallbackCoverage = outcomes.Count == 0 ? 0.0 : perceptionCoverage;
+        return new LensResult(
+            LensResult.Interiors, RuleEvaluation.NormalizedScore(outcomes), fallbackCoverage, outcomes);
     }
+
+    /// <summary>This tradition's stage-3 interpretation, or null when none was recorded.</summary>
+    public static TraditionInterpretation? Interpretation(DerivationInput input, string principleSet) =>
+        input.Observations
+            .Where(o => o.Kind == ObservationPayload.InterpretationKind)
+            .Select(o => o.Interpretation)
+            .FirstOrDefault(i => i is not null && i.PrincipleSet == principleSet);
 
     public static IReadOnlyList<RoomObservation> Rooms(DerivationInput input) =>
         input.Observations.Where(o => o.Kind == ObservationPayload.RoomKind && o.Room is not null)
@@ -340,13 +400,30 @@ public static class AnalysisDerivation
     public static FloorPlanObservation? Plan(DerivationInput input) =>
         input.Observations.FirstOrDefault(o => o.Kind == ObservationPayload.PlanKind)?.Plan;
 
-    private static IReadOnlyList<Suggestion> Suggestions(DerivationInput input) =>
-        input.Observations
-            .SelectMany(o => o.Plan?.Suggestions ?? o.Room?.Suggestions ?? [])
+    /// <summary>
+    /// Suggestions for one tradition. A remedy is a reading, not an observation, so this tradition's
+    /// own interpretation comes first; the plan/room suggestions behind it are the demo path and
+    /// the tradition-neutral adjacency remedies.
+    /// </summary>
+    private static IReadOnlyList<Suggestion> Suggestions(DerivationInput input, string principleSet)
+    {
+        var mine = Interpretation(input, principleSet)?.Suggestions ?? [];
+        return mine
+            .Concat(input.Observations.SelectMany(o => o.Plan?.Suggestions ?? o.Room?.Suggestions ?? []))
             .DistinctBy(s => s.Title, StringComparer.Ordinal)
             .ToList();
+    }
 
-    /// <summary>Tradition filtering — the whole reason one vision call can serve two principle sets.</summary>
+    /// <summary>
+    /// Tradition filtering for tagged findings — the floor-plan path and any observation recorded
+    /// under the two-tradition contract.
+    ///
+    /// <c>"both"</c> predates the five-tradition model and means "shared by every tradition"; on
+    /// the floor-plan path that is accurate, because adjacency relationships are tradition-neutral
+    /// facts. A blank tag matches too, for the same legacy reason — but note that
+    /// <see cref="RoomLens"/> deliberately excludes blanks, since on the photo path a blank marks
+    /// an untagged stage-1 perception fact rather than a reading.
+    /// </summary>
     public static bool Matches(string? tradition, string principleSet) =>
         string.IsNullOrWhiteSpace(tradition) || tradition == "both" || tradition == principleSet;
 
@@ -530,7 +607,74 @@ public class AnalysisPipeline(
             payloads.Add(fresh);
         }
 
+        // Stage 3 — every tradition reads the same assembled fact sheet through its own prompt.
+        // Live only: the demo path's fixtures carry tradition-tagged findings already, and demo
+        // must stay fully functional with no key and no model call.
+        if (live)
+        {
+            payloads.AddRange(await InterpretAsync(
+                subject, inputSet, payloads, orientationHint, modelId, job, ct));
+        }
+
         return payloads;
+    }
+
+    /// <summary>
+    /// Runs one interpretation per tradition over the shared fact sheet, caching each the same way
+    /// perception is cached. The cache key folds in a digest of the fact sheet, so a change to any
+    /// upstream observation invalidates every tradition's reading of it — and, critically, adding a
+    /// sixth tradition re-runs only that tradition rather than the whole subject.
+    /// </summary>
+    private async Task<List<ObservationPayload>> InterpretAsync(
+        Subject subject, InputSet inputSet, IReadOnlyList<ObservationPayload> perceptions,
+        string? orientationHint, string modelId, ScoringJob job, CancellationToken ct)
+    {
+        var rooms = perceptions.Where(p => p.Room is not null).Select(p => p.Room!).ToList();
+        var plan = perceptions.FirstOrDefault(p => p.Kind == ObservationPayload.PlanKind)?.Plan;
+        if (rooms.Count == 0 && plan is null) return [];
+
+        var factSheet = ClaudeAnalysisService.BuildFactSheet(rooms, plan, orientationHint);
+        var digest = Convert.ToHexStringLower(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(factSheet)))[..16];
+
+        var results = new List<ObservationPayload>(Traditions.TraditionRegistry.Ordered.Count);
+        foreach (var tradition in Traditions.TraditionRegistry.Ordered)
+        {
+            var key = $"interpretation:{tradition.Id}:{digest}";
+
+            var existing = await db.Observations.FirstOrDefaultAsync(
+                o => o.SubjectId == subject.Id
+                    && o.EvidenceHash == key
+                    && o.PromptVersion == Prompts.PromptVersion
+                    && o.ModelId == modelId,
+                ct);
+            if (existing is not null && Deserialize(existing.PayloadJson) is { } cached)
+            {
+                results.Add(cached);
+                continue;
+            }
+
+            var interpretation = await WithRetriesAsync(
+                async () => ObservationPayload.ForInterpretation(
+                    await liveRooms.InterpretAsync(tradition, factSheet, orientationHint, ct)),
+                job, ct);
+
+            db.Observations.Add(new Observation
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                SubjectId = subject.Id,
+                InputSetId = inputSet.Id,
+                EvidenceHash = key,
+                PromptVersion = Prompts.PromptVersion,
+                ModelId = modelId,
+                Mode = "live",
+                PayloadJson = JsonSerializer.Serialize(interpretation, Json.Options),
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            results.Add(interpretation);
+        }
+
+        return results;
     }
 
     private async Task<ObservationPayload> PerceiveOneAsync(
@@ -625,7 +769,9 @@ public class AnalysisPipeline(
             row.Grade = score.Grade;
             row.InteriorsScore = score.InteriorsScore;
             row.SiteScore = score.SiteScore;
-            row.NumerologyAdjustment = score.NumerologyAdjustment;
+            // NumerologyAdjustment is intentionally not written: FR-20 removed the mechanism.
+            // The column stays nullable-and-null pending its migration-out.
+            row.NumerologyAdjustment = null;
             row.InteriorsCoverage = score.InteriorsCoverage;
             row.SiteCoverage = score.SiteCoverage;
             row.Confidence = score.Confidence;
@@ -787,7 +933,6 @@ public class AnalysisPipeline(
             score.Cohort.ToString(),
             score.InteriorsScore,
             score.SiteScore,
-            score.NumerologyAdjustment,
             score.Summary,
             interiorRules,
             derived.Site.Outcomes.Select(Rule).ToList(),

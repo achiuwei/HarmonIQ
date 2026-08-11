@@ -60,11 +60,29 @@ public class NumerologyServiceTests
         Assert.DoesNotContain(vastu.Checks, c => c.Tradition == "fengshui");
     }
 
+    /// <summary>
+    /// FR-20: numerology adjusts no stored score. Even the most inauspicious numbers available
+    /// (floor 4, street 40 — both tetraphobic in Chinese practice) must yield an adjustment of
+    /// exactly zero while still producing the checks the Numbers card renders.
+    /// </summary>
     [Fact]
-    public void EvaluateSubject_AdjustmentIsClampedToMinusThree()
+    public void EvaluateSubject_NeverProducesAScoreAdjustment()
     {
         var r = _svc.EvaluateSubject(new ListingNumbers(null, 4, "40"), PrincipleSets.FengShui);
-        Assert.Equal(-3, r.ScoreAdjustment);
+        Assert.Equal(0, r.ScoreAdjustment);
+        Assert.NotEmpty(r.Checks);
+        Assert.Contains(r.Checks, c => c.Verdict == "unlucky");
+    }
+
+    /// <summary>Holds for every tradition, not just the one that used to drive the nudge.</summary>
+    [Fact]
+    public void EvaluateSubject_NeverAdjusts_ForAnyTradition()
+    {
+        foreach (var set in PrincipleSets.All)
+        {
+            var r = _svc.EvaluateSubject(new ListingNumbers(null, 4, "444"), set);
+            Assert.Equal(0, r.ScoreAdjustment);
+        }
     }
 
     [Fact]

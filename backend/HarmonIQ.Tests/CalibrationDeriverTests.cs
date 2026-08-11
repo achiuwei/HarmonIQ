@@ -174,7 +174,7 @@ public class CalibrationDeriverTests
         var thinSite = new LensResult(LensResult.Site, 0.9, 0.1, []);
 
         var score = ScoreMath.Aggregate(
-            PrincipleSets.FengShui, thinInteriors, thinSite, 0, floorplanWith, calibration, null, "summary");
+            PrincipleSets.FengShui, thinInteriors, thinSite, floorplanWith, calibration, null, "summary");
 
         Assert.Equal(AnalysisStatuses.InsufficientEvidence, score.Status);
         Assert.Null(score.Score);

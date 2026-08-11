@@ -70,6 +70,7 @@ public class PublicationService(HarmonIQDbContext db) : IPublicationService
                     FloorPlanId = subject.SubjectType == "floorplan"
                         ? subject.ExternalPlanKey ?? subject.Id
                         : null,
+                    SubjectId = analysis.SubjectId,
                     PrincipleSet = analysis.PrincipleSet,
                     Score = analysis.Score,
                     Grade = analysis.Grade,

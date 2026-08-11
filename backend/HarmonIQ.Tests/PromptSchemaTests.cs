@@ -100,57 +100,96 @@ public class PromptSchemaTests
         Assert.Equal("record_floorplan_observation", root.GetProperty("name").GetString());
     }
 
-    // ---- RoomTool (tradition-agnostic) ----
+    // ---- RoomPerceptionTool (stage 1: facts, no tradition) ----
 
     [Fact]
-    public void RoomTool_ElementBalance_NotInRequired()
+    public void RoomPerceptionTool_IsRecordRoomPerception()
     {
-        var root = Serialize(Prompts.RoomTool);
-        var schema = root.GetProperty("input_schema");
-        var required = schema.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToList();
-
-        Assert.DoesNotContain("elementBalance", required);
-        // still present as an optional property
-        Assert.True(schema.GetProperty("properties").TryGetProperty("elementBalance", out _));
+        var root = Serialize(Prompts.RoomPerceptionTool);
+        Assert.Equal("record_room_perception", root.GetProperty("name").GetString());
     }
 
     [Fact]
-    public void RoomTool_HasNoSystemsParameter()
+    public void RoomPerceptionTool_HasNoSystemsParameter()
     {
-        var root = Serialize(Prompts.RoomTool);
-        var properties = root.GetProperty("input_schema").GetProperty("properties");
+        var properties = Serialize(Prompts.RoomPerceptionTool)
+            .GetProperty("input_schema").GetProperty("properties");
 
         Assert.False(properties.TryGetProperty("systems", out _));
         Assert.False(properties.TryGetProperty("system", out _));
     }
 
+    /// <summary>
+    /// Perception records facts and takes no view, so a fact carries no tradition and no severity
+    /// (a severity is a judgement). With five traditions the old fengshui|vastu|both enum has no
+    /// meaning - "both" was a two-tradition encoding.
+    /// </summary>
     [Fact]
-    public void RoomTool_FindingsCarryRuleIdPrincipleObservationTraditionConfidence()
+    public void RoomPerceptionTool_FactsCarryNoTraditionAndNoSeverity()
     {
-        var root = Serialize(Prompts.RoomTool);
-        var findingItem = root.GetProperty("input_schema").GetProperty("properties")
-            .GetProperty("findings").GetProperty("items");
+        var factItem = Serialize(Prompts.RoomPerceptionTool)
+            .GetProperty("input_schema").GetProperty("properties")
+            .GetProperty("facts").GetProperty("items");
 
-        var properties = findingItem.GetProperty("properties");
+        var properties = factItem.GetProperty("properties");
         Assert.True(properties.TryGetProperty("ruleId", out _));
         Assert.True(properties.TryGetProperty("principle", out _));
         Assert.True(properties.TryGetProperty("observation", out _));
-        Assert.True(properties.TryGetProperty("tradition", out _));
         Assert.True(properties.TryGetProperty("confidence", out _));
 
-        var traditionEnum = properties.GetProperty("tradition").GetProperty("enum")
-            .EnumerateArray().Select(e => e.GetString()).ToList();
-        Assert.Equal(new[] { "fengshui", "vastu", "both" }, traditionEnum);
+        Assert.False(properties.TryGetProperty("tradition", out _));
+        Assert.False(properties.TryGetProperty("severity", out _));
 
-        var required = findingItem.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToList();
+        var required = factItem.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToList();
         Assert.Contains("confidence", required);
     }
 
+    /// <summary>
+    /// Wuxing is a reading, not an observation - and Vastu's pancha bhuta are a different five -
+    /// so the perception pass must not emit an element balance at all.
+    /// </summary>
     [Fact]
-    public void RoomTool_IsRecordRoomObservation()
+    public void RoomPerceptionTool_DoesNotEmitElementBalance()
     {
-        var root = Serialize(Prompts.RoomTool);
-        Assert.Equal("record_room_observation", root.GetProperty("name").GetString());
+        var properties = Serialize(Prompts.RoomPerceptionTool)
+            .GetProperty("input_schema").GetProperty("properties");
+
+        Assert.False(properties.TryGetProperty("elementBalance", out _));
+        Assert.True(properties.TryGetProperty("materials", out _));
+    }
+
+    // ---- InterpretationTool (stage 3: one tradition's reading) ----
+
+    [Fact]
+    public void InterpretationTool_IsRecordInterpretation()
+    {
+        var root = Serialize(Prompts.InterpretationTool);
+        Assert.Equal("record_interpretation", root.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public void InterpretationTool_ElementBalance_OptionalNotRequired()
+    {
+        var schema = Serialize(Prompts.InterpretationTool).GetProperty("input_schema");
+        var required = schema.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToList();
+
+        Assert.DoesNotContain("elementBalance", required);
+        Assert.True(schema.GetProperty("properties").TryGetProperty("elementBalance", out _));
+    }
+
+    /// <summary>
+    /// The model reads exactly one tradition's prompt, so the tag is known by the caller and is
+    /// stamped there. Asking the model to self-tag would only add a way for it to be wrong.
+    /// </summary>
+    [Fact]
+    public void InterpretationTool_FindingsDoNotSelfTagTradition()
+    {
+        var properties = Serialize(Prompts.InterpretationTool)
+            .GetProperty("input_schema").GetProperty("properties")
+            .GetProperty("findings").GetProperty("items").GetProperty("properties");
+
+        Assert.False(properties.TryGetProperty("tradition", out _));
+        Assert.True(properties.TryGetProperty("severity", out _));
     }
 
     // ---- Prompt text content ----
@@ -207,11 +246,12 @@ public class PromptSchemaTests
     {
         var texts = new[]
         {
-            Prompts.RoomSystemPrompt((string?)null),
-            Prompts.RoomSystemPrompt("north"),
+            Prompts.RoomPerceptionPrompt((string?)null),
+            Prompts.RoomPerceptionPrompt("north"),
             Prompts.FloorPlanSystemPrompt(),
             Prompts.SummaryPrompt("digest"),
-            JsonSerializer.Serialize(Prompts.RoomTool, Json.Options),
+            JsonSerializer.Serialize(Prompts.RoomPerceptionTool, Json.Options),
+            JsonSerializer.Serialize(Prompts.InterpretationTool, Json.Options),
             JsonSerializer.Serialize(Prompts.FloorPlanTool, Json.Options),
         };
 
@@ -224,9 +264,14 @@ public class PromptSchemaTests
         }
     }
 
+    /// <summary>
+    /// v3.0 is the perception/interpretation split. The room tool's shape changed incompatibly
+    /// (tagged findings + elementBalance → untagged facts + materials), so v2.0 observations must
+    /// not be reused; this version string is the only thing that forces re-perception.
+    /// </summary>
     [Fact]
-    public void PromptVersion_IsV2()
+    public void PromptVersion_IsV3()
     {
-        Assert.Equal("v2.0", Prompts.PromptVersion);
+        Assert.Equal("v3.0", Prompts.PromptVersion);
     }
 }

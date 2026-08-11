@@ -23,8 +23,12 @@ public record ReportPlanCard(
 
 /// <summary>
 /// The full report body. Stored in the object store, not in the row — the row keeps only the URI
-/// and the digest. <see cref="ElementBalance"/> is omitted entirely when null (Feng-Shui-only,
-/// and a line drawing has no materials): the drawer omits the section rather than showing zeros.
+/// and the digest. <see cref="ElementBalance"/> is omitted entirely when null (the tradition does
+/// not read wǔxíng, or a line drawing has no materials): the drawer omits the section rather than
+/// showing zeros.
+///
+/// There is no <c>NumerologyAdjustment</c>: FR-20 dropped it from the contract. <see cref="Numerology"/>
+/// carries the checks for the Numbers card (FR-19) and contributes to no score.
 /// </summary>
 public record ReportBody(
     string SubjectId,
@@ -41,7 +45,6 @@ public record ReportBody(
     string Cohort,
     int? InteriorsScore,
     int? SiteScore,
-    int NumerologyAdjustment,
     string Summary,
     IReadOnlyList<ReportRule> Interiors,
     IReadOnlyList<ReportRule> Site,
@@ -100,17 +103,21 @@ public class ReportBodyWriter(IObjectStore store)
 public static class LocalSummary
 {
     public static string TraditionPhrase(string principleSet) =>
-        principleSet == PrincipleSets.Vastu ? "in Vastu Shastra terms" : "in form-school Feng Shui terms";
+        Traditions.TraditionRegistry.Find(principleSet)?.TraditionPhrase ?? "in form-school Feng Shui terms";
 
     public static string TraditionName(string principleSet) =>
-        principleSet == PrincipleSets.Vastu ? "Vastu Shastra" : "Feng Shui";
+        Traditions.TraditionRegistry.Find(principleSet)?.DisplayName ?? "Feng Shui";
 
-    /// <summary>The explanatory absence shown instead of a grade below the confidence floor.</summary>
+    /// <summary>
+    /// The explanatory absence shown instead of a grade below the confidence floor. An
+    /// orientation-gated tradition with no resolved facing gets its own explanation, authored by
+    /// that tradition — Kasō explains the kimon, Vastu explains directional placement.
+    /// </summary>
     public static string InsufficientEvidence(string principleSet, string evidencePath, bool orientationResolved)
     {
-        if (principleSet == PrincipleSets.Vastu && !orientationResolved)
-            return "Vastu Shastra reads a home from its facing direction, and this unit's placement data has not resolved a facing. " +
-                   "Rather than publish a Vastu reading with the directional half missing, HarmonIQ leaves it unscored.";
+        var tradition = Traditions.TraditionRegistry.Find(principleSet);
+        if (tradition is { RequiresOrientation: true } && !orientationResolved)
+            return tradition.OrientationGateExplanation;
         return evidencePath == Cohort.FloorPlan
             ? $"The floor-plan drawing did not support enough of the {TraditionName(principleSet)} rule set to place a grade behind it, so this plan is left unscored."
             : $"The available evidence did not support enough of the {TraditionName(principleSet)} rule set to place a grade behind it, so this home is left unscored.";

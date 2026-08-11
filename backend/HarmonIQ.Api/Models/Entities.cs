@@ -165,6 +165,14 @@ public class ProjectionRow
     public string Id { get; set; } = string.Empty;
     public string ListingId { get; set; } = string.Empty;
     public string? FloorPlanId { get; set; } // nullable — mirrors the apartments-web child table
+
+    /// <summary>
+    /// The subject this grade belongs to. Carried as a first-class field so a feed consumer can
+    /// fetch the report body at <c>/api/subject/{subjectId}/report/{principleSet}</c> without
+    /// parsing it back out of <see cref="Id"/>, whose composition is an internal detail.
+    /// </summary>
+    public string SubjectId { get; set; } = string.Empty;
+
     public string PrincipleSet { get; set; } = string.Empty;
     public int? Score { get; set; }
     public string? Grade { get; set; }
