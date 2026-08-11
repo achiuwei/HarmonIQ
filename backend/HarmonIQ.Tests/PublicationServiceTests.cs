@@ -260,6 +260,37 @@ public class PublicationServiceTests : IDisposable
         Assert.Equal(seen.Select(r => r.Id).Distinct().Count(), seen.Count);
     }
 
+    [Fact]
+    public async Task GetPublishedAsync_ReturnsLatestPublished_OnSqlite()
+    {
+        // Regression: ordering by DateTimeOffset cannot be translated by the SQLite provider,
+        // so this threw NotSupportedException on every call.
+        using var ctx = _factory.Create();
+        var older = MakeEngineVersion("aaaa11112222");
+        older.PublishedAt = DateTimeOffset.UtcNow.AddHours(-2);
+        var newer = MakeEngineVersion("bbbb33334444");
+        newer.PublishedAt = DateTimeOffset.UtcNow;
+        ctx.EngineVersions.AddRange(older, newer, MakeEngineVersion("cccc55556666"));
+        await ctx.SaveChangesAsync();
+
+        var svc = new EngineVersionService(ctx, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+        var published = await svc.GetPublishedAsync(CancellationToken.None);
+
+        Assert.NotNull(published);
+        Assert.Equal("bbbb33334444", published!.Version);
+    }
+
+    [Fact]
+    public async Task GetPublishedAsync_ReturnsNull_WhenNothingPublished()
+    {
+        using var ctx = _factory.Create();
+        ctx.EngineVersions.Add(MakeEngineVersion("dddd77778888"));
+        await ctx.SaveChangesAsync();
+
+        var svc = new EngineVersionService(ctx, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+        Assert.Null(await svc.GetPublishedAsync(CancellationToken.None));
+    }
+
     private sealed class SqliteContextFactory(string dbPath)
     {
         private readonly string _connectionString = $"Data Source={dbPath}";

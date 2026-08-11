@@ -73,11 +73,15 @@ public class EngineVersionService(HarmonIQDbContext db, IConfiguration config) :
         return engineVersion;
     }
 
-    public Task<EngineVersion?> GetPublishedAsync(CancellationToken ct) =>
-        db.EngineVersions
+    public async Task<EngineVersion?> GetPublishedAsync(CancellationToken ct)
+    {
+        // SQLite cannot ORDER BY a DateTimeOffset server-side, and the published set is tiny
+        // (one row per engine version), so pick the latest in memory.
+        var published = await db.EngineVersions
             .Where(e => e.PublishedAt != null)
-            .OrderByDescending(e => e.PublishedAt)
-            .FirstOrDefaultAsync(ct);
+            .ToListAsync(ct);
+        return published.MaxBy(e => e.PublishedAt);
+    }
 
     public Task<EngineVersion?> GetAsync(string version, CancellationToken ct) =>
         db.EngineVersions.FirstOrDefaultAsync(e => e.Version == version, ct);
