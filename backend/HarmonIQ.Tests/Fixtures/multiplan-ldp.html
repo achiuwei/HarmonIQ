@@ -1,0 +1,103 @@
+<!--
+  Trimmed but real-shaped floor-plans section, modeled on the 11-site survey (design §0):
+  every surveyed multi-plan LDP exposes data-rentalkey + data-modelname + data-attachmentid on
+  plan cards. This fixture covers: five plans; two cards sharing data-modelname "1 Bed 1 Bath"
+  (display names are not unique); one card with no plan image; a "Show More Units" expander with
+  hidden rows still present in the raw markup; and sqft ranges using both a comma-thousands and
+  an en dash ("1,091 – 1,204 Sq Ft").
+-->
+<section class="floor-plans">
+  <div class="plan-card" data-rentalkey="rk-201" data-modelname="1 Bed 1 Bath" data-attachmentid="att-201">
+    <img class="plan-image" src="/images/plans/rk-201.png" alt="Floor plan for 1 Bed 1 Bath" />
+    <div class="plan-stats">
+      <span class="beds">1 Bed</span>
+      <span class="baths">1 Bath</span>
+      <span class="sqft">609 – 650 Sq Ft</span>
+    </div>
+    <table class="unit-table">
+      <tbody>
+        <tr class="unit-row" data-unit="101">
+          <td class="unit-number">101</td><td class="unit-floor">1</td><td class="unit-sqft">614</td><td class="unit-price">$1,800</td>
+        </tr>
+        <tr class="unit-row" data-unit="201">
+          <td class="unit-number">201</td><td class="unit-floor">2</td><td class="unit-sqft">609</td><td class="unit-price">$1,825</td>
+        </tr>
+        <tr class="unit-row hidden-unit" data-unit="444" style="display:none">
+          <td class="unit-number">444</td><td class="unit-floor">4</td><td class="unit-sqft">650</td><td class="unit-price">$1,910</td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="show-more-units" aria-expanded="false">Show More Units (1)</button>
+  </div>
+
+  <div class="plan-card" data-rentalkey="rk-202" data-modelname="1 Bed 1 Bath" data-attachmentid="att-202">
+    <img class="plan-image" src="/images/plans/rk-202.png" alt="Floor plan for 1 Bed 1 Bath" />
+    <div class="plan-stats">
+      <span class="beds">1 Bed</span>
+      <span class="baths">1 Bath</span>
+      <span class="sqft">590 – 611 Sq Ft</span>
+    </div>
+    <table class="unit-table">
+      <tbody>
+        <tr class="unit-row" data-unit="113">
+          <td class="unit-number">113</td><td class="unit-floor">1</td><td class="unit-sqft">590</td><td class="unit-price">$1,750</td>
+        </tr>
+        <tr class="unit-row" data-unit="213">
+          <td class="unit-number">213</td><td class="unit-floor">2</td><td class="unit-sqft">598</td><td class="unit-price">$1,760</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="plan-card" data-rentalkey="rk-203" data-modelname="2 Bed 2 Bath" data-attachmentid="att-203">
+    <img class="plan-image" src="/images/plans/rk-203.png" alt="Floor plan for 2 Bed 2 Bath" />
+    <div class="plan-stats">
+      <span class="beds">2 Bed</span>
+      <span class="baths">2 Bath</span>
+      <span class="sqft">880 – 940 Sq Ft</span>
+    </div>
+    <table class="unit-table">
+      <tbody>
+        <tr class="unit-row" data-unit="302">
+          <td class="unit-number">302</td><td class="unit-floor">3</td><td class="unit-sqft">880</td><td class="unit-price">$2,400</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- No plan image at all — the "plan without image" case (design §0: rare, null-scored). -->
+  <div class="plan-card" data-rentalkey="rk-204" data-modelname="Studio" data-attachmentid="att-204">
+    <div class="plan-stats">
+      <span class="beds">Studio</span>
+      <span class="baths">1 Bath</span>
+      <span class="sqft">480 – 530 Sq Ft</span>
+    </div>
+    <table class="unit-table">
+      <tbody>
+        <tr class="unit-row" data-unit="105">
+          <td class="unit-number">105</td><td class="unit-floor">1</td><td class="unit-sqft">480</td><td class="unit-price">$1,400</td>
+        </tr>
+        <tr class="unit-row hidden-unit" data-unit="1444" style="display:none">
+          <td class="unit-number">1444</td><td class="unit-floor">14</td><td class="unit-sqft">530</td><td class="unit-price">$1,650</td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="show-more-units" aria-expanded="false">Show More Units (1)</button>
+  </div>
+
+  <div class="plan-card" data-rentalkey="rk-205" data-modelname="2 Bed 1 Bath" data-attachmentid="att-205">
+    <img class="plan-image" src="/images/plans/rk-205.png" alt="Floor plan for 2 Bed 1 Bath" />
+    <div class="plan-stats">
+      <span class="beds">2 Bed</span>
+      <span class="baths">1 Bath</span>
+      <span class="sqft">1,091 – 1,204 Sq Ft</span>
+    </div>
+    <table class="unit-table">
+      <tbody>
+        <tr class="unit-row" data-unit="501">
+          <td class="unit-number">501</td><td class="unit-floor">5</td><td class="unit-sqft">1,091</td><td class="unit-price">$2,650</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

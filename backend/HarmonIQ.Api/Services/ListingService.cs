@@ -11,6 +11,15 @@ public interface IListingService
 {
     Task<ListingResponse> GetListingAsync(string listingId, CancellationToken ct);
     Task<PhotoBytes?> GetPhotoAsync(string listingId, string photoId, int? width, CancellationToken ct);
+
+    /// <summary>
+    /// The site-environment snapshot for a property (shared by every floor-plan subject under
+    /// it — surroundings don't vary per plan). <c>null</c> means this service has no way to
+    /// resolve it offline for the given key (real properties resolve via geocoding elsewhere;
+    /// out of scope for task 6's ingestion seam). Never makes a network call for a demo/sample
+    /// property key.
+    /// </summary>
+    Task<ListingEnvironment?> GetPropertyEnvironmentAsync(string propertyKey, CancellationToken ct);
 }
 
 public class ListingService(
@@ -28,6 +37,15 @@ public class ListingService(
         var listing = await ScrapeListingAsync(listingId, ct); // Task 8 implements
         cache.Set($"listing:{listingId}", listing, Ttl);
         return listing;
+    }
+
+    public Task<ListingEnvironment?> GetPropertyEnvironmentAsync(string propertyKey, CancellationToken ct)
+    {
+        if (propertyKey == SampleListingProvider.ListingId)
+            return Task.FromResult<ListingEnvironment?>(sample.GetListing().Environment);
+        if (propertyKey == SampleListingProvider.MultiplanPropertyKey)
+            return Task.FromResult<ListingEnvironment?>(sample.GetMultiplanEnvironment());
+        return Task.FromResult<ListingEnvironment?>(null);
     }
 
     public async Task<PhotoBytes?> GetPhotoAsync(string listingId, string photoId, int? width, CancellationToken ct)

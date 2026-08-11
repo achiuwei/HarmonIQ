@@ -107,8 +107,11 @@ public class FixtureOrientationProviderTests
     [Fact]
     public async Task ClearMajorityPlan_Resolves()
     {
+        // rk-101: real plan key from the multi-plan fixture (Data/sample-multiplan-listing.json),
+        // re-keyed here from Task 4's original plan-a/plan-b/plan-c by Task 6 (the orientation
+        // consumer) so the three Q5 shapes attach to actual plans.
         var provider = new FixtureOrientationProvider(FixturePath());
-        var result = await provider.ResolveAsync("sample-multiplan", "plan-a", CancellationToken.None);
+        var result = await provider.ResolveAsync("sample-multiplan", "rk-101", CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal("sightmap", result!.Source);
@@ -119,7 +122,7 @@ public class FixtureOrientationProviderTests
     public async Task SplitPlan_ResolvesToNone()
     {
         var provider = new FixtureOrientationProvider(FixturePath());
-        var result = await provider.ResolveAsync("sample-multiplan", "plan-b", CancellationToken.None);
+        var result = await provider.ResolveAsync("sample-multiplan", "rk-102", CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal("none", result!.Source);
@@ -128,8 +131,10 @@ public class FixtureOrientationProviderTests
     [Fact]
     public async Task NoPlacementsPlan_ReturnsNull()
     {
+        // rk-105 is absent entirely from the fixture (design's imageless/unscored plan) — a
+        // natural "no data" case, distinct from rk-102's resolved-but-unconcentrated "none".
         var provider = new FixtureOrientationProvider(FixturePath());
-        var result = await provider.ResolveAsync("sample-multiplan", "plan-c", CancellationToken.None);
+        var result = await provider.ResolveAsync("sample-multiplan", "rk-105", CancellationToken.None);
 
         Assert.Null(result);
     }
@@ -138,7 +143,7 @@ public class FixtureOrientationProviderTests
     public async Task UncoveredProperty_ReturnsNull()
     {
         var provider = new FixtureOrientationProvider(FixturePath());
-        var result = await provider.ResolveAsync("does-not-exist", "plan-a", CancellationToken.None);
+        var result = await provider.ResolveAsync("does-not-exist", "rk-101", CancellationToken.None);
 
         Assert.Null(result);
     }

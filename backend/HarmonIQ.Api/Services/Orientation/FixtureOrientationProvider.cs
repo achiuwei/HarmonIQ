@@ -6,14 +6,16 @@ namespace HarmonIQ.Api.Services.Orientation;
 /// Local-demo orientation path: reads <c>Data/sample-orientation.json</c>, keyed
 /// <c>propertyKey -> planKey -> unit placements</c>. This is the only way the with-orientation
 /// path is exercisable locally (no SightMap key exists), so the fixture is written to cover all
-/// three Q5 shapes:
-/// - <c>plan-a</c>: 9/10 placed units concentrate north (90% ≥ 80%) → resolves, source
+/// three Q5 shapes, keyed onto real plans from the multi-plan fixture
+/// (<c>Data/sample-multiplan-listing.json</c>, task 5) rather than placeholder plan ids:
+/// - <c>rk-101</c>: 9/10 placed units concentrate north (90% ≥ 80%) → resolves, source
 ///   "sightmap".
-/// - <c>plan-b</c>: placed units split ~50/50 north/south → resolves to <c>Source = "none"</c>
+/// - <c>rk-102</c>: placed units split ~50/50 north/south → resolves to <c>Source = "none"</c>
 ///   (below the 80% threshold).
-/// - <c>plan-c</c>: no placements at all → <c>ResolveAsync</c> returns <c>null</c>.
+/// - <c>rk-105</c> (the plan with no image, so already unscored on that path): absent entirely
+///   from the fixture → <c>ResolveAsync</c> returns <c>null</c>, same as "not covered".
 ///
-/// A propertyKey/subjectId combination absent from the fixture entirely also returns
+/// Any other propertyKey/subjectId combination absent from the fixture also returns
 /// <c>null</c> ("not covered"), matching the interface contract.
 /// </summary>
 public class FixtureOrientationProvider : IOrientationProvider
