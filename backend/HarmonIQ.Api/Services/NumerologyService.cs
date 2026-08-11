@@ -2,6 +2,26 @@ using HarmonIQ.Api.Models;
 
 namespace HarmonIQ.Api.Services;
 
+/// <summary>
+/// Deterministic, pure numerology engine. No DbContext, no I/O — safe as a singleton
+/// and safe to call at read time with no persistence side effect.
+///
+/// Two distinct surfaces, per design Q1 / SPEC v2 FR-17..20:
+/// <list type="bullet">
+/// <item><description>
+/// <see cref="EvaluateSubject"/> — the subject-level (building floor / street number)
+/// ±3 that still nudges <c>ScoreMath.Aggregate</c>'s final score, now scoped per
+/// principle set rather than the v1 tri-state <c>systems</c> string.
+/// </description></item>
+/// <item><description>
+/// <see cref="EvaluateUnit"/> / <see cref="EvaluateUnits"/> — per-unit annotations,
+/// computed at read time, never persisted, never entering any score. They render as
+/// an availability-table annotation only.
+/// </description></item>
+/// </list>
+/// <see cref="Evaluate"/> is the v1 entry point, kept for existing callers (removed
+/// once Task 11 retires the v1 <c>AnalysisController</c> path in a later tier).
+/// </summary>
 public class NumerologyService
 {
     public NumerologyResult Evaluate(ListingNumbers? numbers, string systems)
@@ -17,14 +37,87 @@ public class NumerologyService
                 if (Western(subject, value) is { } w) checks.Add(w); // only when triggered
             }
         }
-        var adj = Math.Clamp(
-            checks.Sum(c => c.Verdict switch { "lucky" => 1, "unlucky" => -2, _ => 0 }), -3, 3);
+        var adj = Math.Clamp(checks.Sum(c => Weight(c.Verdict)), -3, 3);
         return new NumerologyResult(adj, checks);
     }
+
+    /// <summary>
+    /// The subject-level check that actually enters the score (via
+    /// <c>ScoreMath.Aggregate</c>'s <c>numerologyAdjustment</c> parameter). Deliberately
+    /// excludes the unit number — a subject (a floor plan or a property) may host many
+    /// units, and no single unit's number may bias the subject's grade. Only the
+    /// building floor and street number, which are properties of the subject itself,
+    /// are considered here.
+    /// </summary>
+    public NumerologyResult EvaluateSubject(ListingNumbers? numbers, string principleSet)
+    {
+        RequireKnownSet(principleSet);
+        var checks = new List<NumerologyCheck>();
+        if (numbers is not null)
+        {
+            foreach (var (subject, value) in SubjectLevelNumbers(numbers))
+            {
+                if (string.IsNullOrWhiteSpace(value)) continue;
+                checks.Add(principleSet == PrincipleSets.Vastu ? Vastu(subject, value) : Chinese(subject, value));
+                if (Western(subject, value) is { } w) checks.Add(w); // only when triggered
+            }
+        }
+        var adj = Math.Clamp(checks.Sum(c => Weight(c.Verdict)), -3, 3);
+        return new NumerologyResult(adj, checks);
+    }
+
+    /// <summary>
+    /// One unit's read-time annotation for a single principle set. Pure: same input
+    /// always yields the same output, no DB access, nothing persisted. Never a
+    /// competing grade — <see cref="UnitNumerologyAnnotation.Adjustment"/> exists only
+    /// for internal ordering and must never be rendered as a score.
+    /// </summary>
+    public UnitNumerologyAnnotation EvaluateUnit(string unitNumber, int? floor, string principleSet)
+    {
+        RequireKnownSet(principleSet);
+        var primary = principleSet == PrincipleSets.Vastu
+            ? Vastu("unitNumber", unitNumber)
+            : Chinese("unitNumber", unitNumber);
+        var western = Western("unitNumber", unitNumber);
+
+        var weight = Weight(primary.Verdict) + (western is null ? 0 : Weight(western.Verdict));
+        var adjustment = Math.Clamp(weight, -3, 3);
+        var verdict = adjustment switch { > 0 => "lucky", < 0 => "unlucky", _ => "neutral" };
+        var note = western is null ? primary.Reason : $"{primary.Reason} {western.Reason}";
+
+        return new UnitNumerologyAnnotation(unitNumber, floor, principleSet, adjustment, verdict, note);
+    }
+
+    /// <summary>
+    /// Annotates every unit on a plan for one principle set. Pure and read-time only —
+    /// callers may construct <see cref="NumerologyService"/> with no dependencies at all
+    /// and call this with no database in play.
+    /// </summary>
+    public IReadOnlyList<UnitNumerologyAnnotation> EvaluateUnits(
+        IEnumerable<ScrapedUnit> units, string principleSet)
+    {
+        RequireKnownSet(principleSet);
+        return units.Select(u => EvaluateUnit(u.UnitNumber, u.Floor, principleSet)).ToList();
+    }
+
+    private static void RequireKnownSet(string principleSet)
+    {
+        if (!PrincipleSets.IsKnown(principleSet))
+            throw new ArgumentException(
+                $"principleSet must be one of: {string.Join(", ", PrincipleSets.All)}.", nameof(principleSet));
+    }
+
+    private static int Weight(string verdict) => verdict switch { "lucky" => 1, "unlucky" => -2, _ => 0 };
 
     private static IEnumerable<(string, string?)> Subjects(ListingNumbers n) =>
     [
         ("unitNumber", n.UnitNumber),
+        ("floor", n.Floor?.ToString()),
+        ("streetNumber", n.StreetNumber),
+    ];
+
+    private static IEnumerable<(string, string?)> SubjectLevelNumbers(ListingNumbers n) =>
+    [
         ("floor", n.Floor?.ToString()),
         ("streetNumber", n.StreetNumber),
     ];
@@ -79,7 +172,7 @@ public class NumerologyService
     private static NumerologyCheck? Western(string subject, string value)
     {
         var digits = new string(value.Where(char.IsDigit).ToArray());
-        if (digits == "13")
+        if (digits.Contains("13"))
             return new(subject, value, "unlucky", "western",
                 "13 is widely considered unlucky in Western tradition (triskaidekaphobia).",
                 "A door wreath or plant at the entry is a common softening touch; many buildings simply relabel.");
