@@ -8,6 +8,7 @@ import { ModePill } from './ModePill';
 import { RoomCard } from './RoomCard';
 import { SiteCard } from './SiteCard';
 import { NumbersCard } from './NumbersCard';
+import { RefineDrawer } from './RefineDrawer';
 
 export interface ReportPanelProps {
   phase: Phase;
@@ -17,7 +18,7 @@ export interface ReportPanelProps {
   onRefine: (r: Refinement) => void;
 }
 
-export function ReportPanel({ phase, listing, report, refinement, onRefine: _onRefine }: ReportPanelProps) {
+export function ReportPanel({ phase, listing, report, refinement, onRefine }: ReportPanelProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   if (!report) {
     return (
@@ -51,7 +52,10 @@ export function ReportPanel({ phase, listing, report, refinement, onRefine: _onR
         </div>
         <ElementBars balance={a.elementBalance} />
       </div>
-      {/* RefineDrawer: Task 16 (render when drawerOpen) */}
+      {drawerOpen && listing && refinement && (
+        <RefineDrawer listing={listing} refinement={refinement}
+          onApply={onRefine} onClose={() => setDrawerOpen(false)} />
+      )}
       {a.rooms.map(room => (
         <RoomCard key={room.photoId} room={room} thumbnailUrl={thumb(room.photoId)} />
       ))}
