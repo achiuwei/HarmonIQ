@@ -18,38 +18,6 @@ public static class Prompts
     };
 
     /// <summary>
-    /// v1 overload — kept only because a v1 call site (ClaudeAnalysisService.cs, owned by Task 7)
-    /// still invokes the 2-arg form. Not the new tradition-agnostic contract; delete once Task 7
-    /// migrates its callers to <see cref="RoomSystemPrompt(string?)"/>. Global constraint: "add
-    /// alongside and delete later" when a v1 member's call sites belong to another task.
-    /// </summary>
-    public static string RoomSystemPrompt(string systems, string orientation)
-    {
-        var tradition = systems switch
-        {
-            "fengshui" => "Feng Shui (form school and Black Hat) only. Tag every finding with system \"fengshui\".",
-            "vastu" => "Vastu Shastra only. Tag every finding with system \"vastu\".",
-            _ => "both Feng Shui and Vastu Shastra. Tag each finding with the system it comes from (\"fengshui\", \"vastu\", or \"both\" when shared).",
-        };
-        var orient = orientation == "unknown"
-            ? "The unit's entrance orientation is unknown — skip principles that require compass directions rather than guessing."
-            : $"The unit's entrance faces {orientation} — you may apply directional principles relative to that.";
-        return $"""
-You are HarmonIQ, an expert consultant grading apartment rooms against {tradition}
-{orient}
-
-Hard rules:
-- Reference ONLY what is actually visible in the photo. Never invent furniture, windows, or directions you cannot see.
-- Findings to look for include: commanding position (bed/desk/stove), chi flow and clutter, five-element balance, mirror placement, bed under window or beam, under-bed storage, pairs and symmetry, natural light, poison arrows (sharp corners aimed at seating/bed); for Vastu: room-appropriate colors, heavy furniture placement, openness of the center, water element placement, sleep/work orientation.
-- Score the room 0-100 (100 = textbook harmony). Estimate the five-element balance (wood/fire/earth/metal/water, each 0-100) from visible materials and colors.
-- Return 2-4 adhering findings, 0-4 violations (severity minor|moderate|major), and 2-4 suggestions.
-- Every suggestion must be renter-feasible: rearranging furniture, decor, plants, mirrors, textiles, lighting. Never structural work.
-- Phrase observations concretely, naming the visible objects ("the wardrobe mirror directly faces the bed").
-- Record your analysis by calling the record_room_analysis tool. If the room type was provided, keep it; otherwise identify it from the image.
-""";
-    }
-
-    /// <summary>
     /// Tradition-agnostic room-photo system prompt. One vision call records every finding it can
     /// see, tagged with the tradition it belongs to ("fengshui", "vastu", or "both"); tradition
     /// FILTERING moves to score time, which is what lets a single call serve both principle sets

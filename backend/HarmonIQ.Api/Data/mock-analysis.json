@@ -1,102 +1,372 @@
 {
   "bedroom": {
     "score": 54,
-    "elementBalance": { "wood": 22, "fire": 8, "earth": 46, "metal": 12, "water": 12 },
-    "adhering": [
-      { "principle": "Natural Light", "observation": "A large window brings strong daylight into the sleeping area.", "system": "both" },
-      { "principle": "Solid Headboard", "observation": "The bed has a solid headboard against a wall, giving supported rest.", "system": "fengshui" }
-    ],
-    "violations": [
-      { "principle": "Bed in Line with the Door", "observation": "The foot of the bed points straight at the open door — the classic 'coffin position' that drains restful energy.", "severity": "major", "system": "both" },
-      { "principle": "Mirror Facing the Bed", "observation": "A wall mirror directly faces the bed, bouncing active energy at sleepers.", "severity": "major", "system": "fengshui" },
-      { "principle": "Under-Bed Storage", "observation": "Boxes stored under the bed block chi from circulating beneath the sleeper.", "severity": "moderate", "system": "fengshui" },
-      { "principle": "Beam Over the Bed", "observation": "An exposed beam crosses above the bed, pressing down on the sleeping area.", "severity": "moderate", "system": "both" }
+    "coverage": 0.86,
+    "elementBalance": {
+      "wood": 22,
+      "fire": 8,
+      "earth": 46,
+      "metal": 12,
+      "water": 12
+    },
+    "findings": [
+      {
+        "ruleId": "room.natural_light",
+        "principle": "Natural Light",
+        "observation": "A large window brings strong daylight into the sleeping area.",
+        "tradition": "both",
+        "confidence": 0.9
+      },
+      {
+        "ruleId": "room.solid_headboard",
+        "principle": "Solid Headboard",
+        "observation": "The bed has a solid headboard against a wall, giving supported rest.",
+        "tradition": "fengshui",
+        "confidence": 0.85
+      },
+      {
+        "ruleId": "room.bed_in_line_with_the_door",
+        "principle": "Bed in Line with the Door",
+        "observation": "The foot of the bed points straight at the open door — the classic 'coffin position' that drains restful energy.",
+        "tradition": "both",
+        "confidence": 0.88,
+        "severity": "major"
+      },
+      {
+        "ruleId": "room.mirror_facing_the_bed",
+        "principle": "Mirror Facing the Bed",
+        "observation": "A wall mirror directly faces the bed, bouncing active energy at sleepers.",
+        "tradition": "fengshui",
+        "confidence": 0.82,
+        "severity": "major"
+      },
+      {
+        "ruleId": "room.under_bed_storage",
+        "principle": "Under-Bed Storage",
+        "observation": "Boxes stored under the bed block chi from circulating beneath the sleeper.",
+        "tradition": "fengshui",
+        "confidence": 0.76,
+        "severity": "moderate"
+      },
+      {
+        "ruleId": "room.beam_over_the_bed",
+        "principle": "Beam Over the Bed",
+        "observation": "An exposed beam crosses above the bed, pressing down on the sleeping area.",
+        "tradition": "both",
+        "confidence": 0.7,
+        "severity": "moderate"
+      }
     ],
     "suggestions": [
-      { "title": "Shift the bed off the door line", "detail": "Slide the bed so the foot no longer aims at the doorway while keeping a view of the door.", "effort": "medium", "impact": "high" },
-      { "title": "Reposition or cover the mirror", "detail": "Angle the mirror away from the bed or drape it at night.", "effort": "low", "impact": "high" },
-      { "title": "Clear under the bed", "detail": "Move the boxes to a closet so air and energy can flow beneath you.", "effort": "low", "impact": "medium" }
+      {
+        "title": "Shift the bed off the door line",
+        "detail": "Slide the bed so the foot no longer aims at the doorway while keeping a view of the door.",
+        "effort": "medium",
+        "impact": "high"
+      },
+      {
+        "title": "Reposition or cover the mirror",
+        "detail": "Angle the mirror away from the bed or drape it at night.",
+        "effort": "low",
+        "impact": "high"
+      },
+      {
+        "title": "Clear under the bed",
+        "detail": "Move the boxes to a closet so air and energy can flow beneath you.",
+        "effort": "low",
+        "impact": "medium"
+      }
     ]
   },
   "living room": {
     "score": 61,
-    "elementBalance": { "wood": 34, "fire": 12, "earth": 30, "metal": 10, "water": 14 },
-    "adhering": [
-      { "principle": "Living Greenery", "observation": "A healthy plant adds wood energy and life to the room.", "system": "both" },
-      { "principle": "Bright Natural Corner", "observation": "The window corner brings generous daylight into the seating area.", "system": "fengshui" }
-    ],
-    "violations": [
-      { "principle": "Blocked Chi Path", "observation": "The sofa sits across the walkway from the door, interrupting the natural flow through the room.", "severity": "moderate", "system": "fengshui" },
-      { "principle": "Heavy Mass in the Light Corner", "observation": "A tall, heavy bookcase occupies the brightest corner, weighing down its uplifting energy.", "severity": "moderate", "system": "both" },
-      { "principle": "Clutter", "observation": "Boxes and piles gather in the center of the room, stagnating energy.", "severity": "minor", "system": "both" }
+    "coverage": 0.82,
+    "elementBalance": {
+      "wood": 34,
+      "fire": 12,
+      "earth": 30,
+      "metal": 10,
+      "water": 14
+    },
+    "findings": [
+      {
+        "ruleId": "room.living_greenery",
+        "principle": "Living Greenery",
+        "observation": "A healthy plant adds wood energy and life to the room.",
+        "tradition": "both",
+        "confidence": 0.9
+      },
+      {
+        "ruleId": "room.bright_natural_corner",
+        "principle": "Bright Natural Corner",
+        "observation": "The window corner brings generous daylight into the seating area.",
+        "tradition": "fengshui",
+        "confidence": 0.85
+      },
+      {
+        "ruleId": "room.blocked_chi_path",
+        "principle": "Blocked Chi Path",
+        "observation": "The sofa sits across the walkway from the door, interrupting the natural flow through the room.",
+        "tradition": "fengshui",
+        "confidence": 0.88,
+        "severity": "moderate"
+      },
+      {
+        "ruleId": "room.heavy_mass_in_the_light_corner",
+        "principle": "Heavy Mass in the Light Corner",
+        "observation": "A tall, heavy bookcase occupies the brightest corner, weighing down its uplifting energy.",
+        "tradition": "both",
+        "confidence": 0.82,
+        "severity": "moderate"
+      },
+      {
+        "ruleId": "room.clutter",
+        "principle": "Clutter",
+        "observation": "Boxes and piles gather in the center of the room, stagnating energy.",
+        "tradition": "both",
+        "confidence": 0.76,
+        "severity": "minor"
+      }
     ],
     "suggestions": [
-      { "title": "Open the entry path", "detail": "Rotate the sofa to run parallel with the walkway so the route from the door flows freely.", "effort": "medium", "impact": "high" },
-      { "title": "Swap the bookcase and plant", "detail": "Move the bookcase to a dimmer wall and let the plant take the bright corner.", "effort": "medium", "impact": "medium" },
-      { "title": "Clear the floor piles", "detail": "Basket or shelve the loose items to restore open floor.", "effort": "low", "impact": "medium" }
+      {
+        "title": "Open the entry path",
+        "detail": "Rotate the sofa to run parallel with the walkway so the route from the door flows freely.",
+        "effort": "medium",
+        "impact": "high"
+      },
+      {
+        "title": "Swap the bookcase and plant",
+        "detail": "Move the bookcase to a dimmer wall and let the plant take the bright corner.",
+        "effort": "medium",
+        "impact": "medium"
+      },
+      {
+        "title": "Clear the floor piles",
+        "detail": "Basket or shelve the loose items to restore open floor.",
+        "effort": "low",
+        "impact": "medium"
+      }
     ]
   },
   "kitchen": {
     "score": 66,
-    "elementBalance": { "wood": 18, "fire": 34, "earth": 20, "metal": 20, "water": 8 },
-    "adhering": [
-      { "principle": "Fresh Growth", "observation": "Herb plants on the floor add living wood energy to balance the fire of the stove.", "system": "fengshui" },
-      { "principle": "Natural Light", "observation": "A window keeps the cooking area bright and airy.", "system": "both" }
-    ],
-    "violations": [
-      { "principle": "Fire-Water Clash", "observation": "The stove and sink sit directly adjacent, placing fire and water elements in conflict.", "severity": "moderate", "system": "fengshui" },
-      { "principle": "Exposed Blades", "observation": "A knife block sits in open view, projecting sharp energy across the counter.", "severity": "minor", "system": "fengshui" }
+    "coverage": 0.84,
+    "elementBalance": {
+      "wood": 18,
+      "fire": 34,
+      "earth": 20,
+      "metal": 20,
+      "water": 8
+    },
+    "findings": [
+      {
+        "ruleId": "room.fresh_growth",
+        "principle": "Fresh Growth",
+        "observation": "Herb plants on the floor add living wood energy to balance the fire of the stove.",
+        "tradition": "fengshui",
+        "confidence": 0.9
+      },
+      {
+        "ruleId": "room.natural_light",
+        "principle": "Natural Light",
+        "observation": "A window keeps the cooking area bright and airy.",
+        "tradition": "both",
+        "confidence": 0.85
+      },
+      {
+        "ruleId": "room.fire_water_clash",
+        "principle": "Fire-Water Clash",
+        "observation": "The stove and sink sit directly adjacent, placing fire and water elements in conflict.",
+        "tradition": "fengshui",
+        "confidence": 0.88,
+        "severity": "moderate"
+      },
+      {
+        "ruleId": "room.exposed_blades",
+        "principle": "Exposed Blades",
+        "observation": "A knife block sits in open view, projecting sharp energy across the counter.",
+        "tradition": "fengshui",
+        "confidence": 0.82,
+        "severity": "minor"
+      }
     ],
     "suggestions": [
-      { "title": "Buffer stove and sink", "detail": "Place a small wooden cutting board or a potted herb between the stove and sink to mediate fire and water.", "effort": "low", "impact": "medium" },
-      { "title": "Store knives in a drawer", "detail": "Move the knife block into a drawer with an in-drawer organizer.", "effort": "low", "impact": "low" }
+      {
+        "title": "Buffer stove and sink",
+        "detail": "Place a small wooden cutting board or a potted herb between the stove and sink to mediate fire and water.",
+        "effort": "low",
+        "impact": "medium"
+      },
+      {
+        "title": "Store knives in a drawer",
+        "detail": "Move the knife block into a drawer with an in-drawer organizer.",
+        "effort": "low",
+        "impact": "low"
+      }
     ]
   },
   "bathroom": {
     "score": 58,
-    "elementBalance": { "wood": 6, "fire": 4, "earth": 22, "metal": 22, "water": 46 },
-    "adhering": [
-      { "principle": "Contained Water Room", "observation": "Fixtures are grouped tidily along one wall, keeping the water zone contained.", "system": "vastu" },
-      { "principle": "Clear Mirror", "observation": "A clean mirror above the sink expands light in a small space.", "system": "fengshui" }
-    ],
-    "violations": [
-      { "principle": "Open Toilet Lid", "observation": "The toilet lid is up — in Feng Shui terms, wealth energy literally drains away.", "severity": "minor", "system": "fengshui" },
-      { "principle": "Dim, Windowless Space", "observation": "No natural light leaves the room's energy heavy and damp.", "severity": "moderate", "system": "both" }
+    "coverage": 0.78,
+    "elementBalance": {
+      "wood": 6,
+      "fire": 4,
+      "earth": 22,
+      "metal": 22,
+      "water": 46
+    },
+    "findings": [
+      {
+        "ruleId": "room.contained_water_room",
+        "principle": "Contained Water Room",
+        "observation": "Fixtures are grouped tidily along one wall, keeping the water zone contained.",
+        "tradition": "vastu",
+        "confidence": 0.9
+      },
+      {
+        "ruleId": "room.clear_mirror",
+        "principle": "Clear Mirror",
+        "observation": "A clean mirror above the sink expands light in a small space.",
+        "tradition": "fengshui",
+        "confidence": 0.85
+      },
+      {
+        "ruleId": "room.open_toilet_lid",
+        "principle": "Open Toilet Lid",
+        "observation": "The toilet lid is up — in Feng Shui terms, wealth energy literally drains away.",
+        "tradition": "fengshui",
+        "confidence": 0.88,
+        "severity": "minor"
+      },
+      {
+        "ruleId": "room.dim_windowless_space",
+        "principle": "Dim, Windowless Space",
+        "observation": "No natural light leaves the room's energy heavy and damp.",
+        "tradition": "both",
+        "confidence": 0.82,
+        "severity": "moderate"
+      }
     ],
     "suggestions": [
-      { "title": "Keep the lid down", "detail": "Close the toilet lid (and the door) to stop the symbolic drain.", "effort": "low", "impact": "medium" },
-      { "title": "Warm the light", "detail": "Add warm-white bulbs and a small plant that tolerates low light (pothos) to lift the energy.", "effort": "low", "impact": "medium" }
+      {
+        "title": "Keep the lid down",
+        "detail": "Close the toilet lid (and the door) to stop the symbolic drain.",
+        "effort": "low",
+        "impact": "medium"
+      },
+      {
+        "title": "Warm the light",
+        "detail": "Add warm-white bulbs and a small plant that tolerates low light (pothos) to lift the energy.",
+        "effort": "low",
+        "impact": "medium"
+      }
     ]
   },
   "home office": {
     "score": 60,
-    "elementBalance": { "wood": 30, "fire": 10, "earth": 24, "metal": 26, "water": 10 },
-    "adhering": [
-      { "principle": "Natural Light at the Desk", "observation": "The window gives the work area steady daylight.", "system": "both" },
-      { "principle": "Living Plant", "observation": "A plant near the desk adds growth energy to the work zone.", "system": "fengshui" }
-    ],
-    "violations": [
-      { "principle": "Back to the Door", "observation": "The desk chair faces away from the door — outside the commanding position, inviting unease.", "severity": "major", "system": "fengshui" },
-      { "principle": "Cable Clutter", "observation": "Loose cables tangle beneath the desk, snarling the flow of the workspace.", "severity": "minor", "system": "both" }
+    "coverage": 0.8,
+    "elementBalance": {
+      "wood": 30,
+      "fire": 10,
+      "earth": 24,
+      "metal": 26,
+      "water": 10
+    },
+    "findings": [
+      {
+        "ruleId": "room.natural_light_at_the_desk",
+        "principle": "Natural Light at the Desk",
+        "observation": "The window gives the work area steady daylight.",
+        "tradition": "both",
+        "confidence": 0.9
+      },
+      {
+        "ruleId": "room.living_plant",
+        "principle": "Living Plant",
+        "observation": "A plant near the desk adds growth energy to the work zone.",
+        "tradition": "fengshui",
+        "confidence": 0.85
+      },
+      {
+        "ruleId": "room.back_to_the_door",
+        "principle": "Back to the Door",
+        "observation": "The desk chair faces away from the door — outside the commanding position, inviting unease.",
+        "tradition": "fengshui",
+        "confidence": 0.88,
+        "severity": "major"
+      },
+      {
+        "ruleId": "room.cable_clutter",
+        "principle": "Cable Clutter",
+        "observation": "Loose cables tangle beneath the desk, snarling the flow of the workspace.",
+        "tradition": "both",
+        "confidence": 0.82,
+        "severity": "minor"
+      }
     ],
     "suggestions": [
-      { "title": "Turn the desk to command the room", "detail": "Rotate the desk so you face the door with the wall at your back.", "effort": "medium", "impact": "high" },
-      { "title": "Tame the cables", "detail": "Bundle cables into a sleeve or under-desk tray.", "effort": "low", "impact": "low" }
+      {
+        "title": "Turn the desk to command the room",
+        "detail": "Rotate the desk so you face the door with the wall at your back.",
+        "effort": "medium",
+        "impact": "high"
+      },
+      {
+        "title": "Tame the cables",
+        "detail": "Bundle cables into a sleeve or under-desk tray.",
+        "effort": "low",
+        "impact": "low"
+      }
     ]
   },
   "default": {
     "score": 68,
-    "elementBalance": { "wood": 24, "fire": 16, "earth": 28, "metal": 16, "water": 16 },
-    "adhering": [
-      { "principle": "Balanced Proportions", "observation": "The room reads open and usable, with furniture scaled to the space.", "system": "both" },
-      { "principle": "Natural Light", "observation": "Daylight reaches the main area of the room.", "system": "both" }
-    ],
-    "violations": [
-      { "principle": "Mixed Element Balance", "observation": "Materials and colors lean on one or two elements, leaving the palette slightly unbalanced.", "severity": "minor", "system": "fengshui" }
+    "coverage": 0.72,
+    "elementBalance": {
+      "wood": 24,
+      "fire": 16,
+      "earth": 28,
+      "metal": 16,
+      "water": 16
+    },
+    "findings": [
+      {
+        "ruleId": "room.balanced_proportions",
+        "principle": "Balanced Proportions",
+        "observation": "The room reads open and usable, with furniture scaled to the space.",
+        "tradition": "both",
+        "confidence": 0.9
+      },
+      {
+        "ruleId": "room.natural_light",
+        "principle": "Natural Light",
+        "observation": "Daylight reaches the main area of the room.",
+        "tradition": "both",
+        "confidence": 0.85
+      },
+      {
+        "ruleId": "room.mixed_element_balance",
+        "principle": "Mixed Element Balance",
+        "observation": "Materials and colors lean on one or two elements, leaving the palette slightly unbalanced.",
+        "tradition": "fengshui",
+        "confidence": 0.88,
+        "severity": "minor"
+      }
     ],
     "suggestions": [
-      { "title": "Round out the elements", "detail": "Add an accent in an underrepresented element — a plant (wood), warm lamp (fire), or ceramic piece (earth).", "effort": "low", "impact": "low" },
-      { "title": "Keep pathways clear", "detail": "Maintain an open route from the door through the room.", "effort": "low", "impact": "medium" }
+      {
+        "title": "Round out the elements",
+        "detail": "Add an accent in an underrepresented element — a plant (wood), warm lamp (fire), or ceramic piece (earth).",
+        "effort": "low",
+        "impact": "low"
+      },
+      {
+        "title": "Keep pathways clear",
+        "detail": "Maintain an open route from the door through the room.",
+        "effort": "low",
+        "impact": "medium"
+      }
     ]
   }
 }

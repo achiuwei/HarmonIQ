@@ -1,0 +1,104 @@
+{
+  "baseCoverage": 0.7,
+  "coverageStep": 0.05,
+  "coverageSteps": 6,
+  "findings": [
+    {
+      "ruleId": "bath_adjacent_kitchen",
+      "principle": "Water Room Beside the Cooking Zone",
+      "observation": "The plan puts a bathroom wall directly against the kitchen wall. In form-school Feng Shui and in Vastu Shastra alike, the water room and the cooking zone are read as belonging to separate parts of the home.",
+      "tradition": "both",
+      "confidence": 0.78,
+      "severity": "moderate"
+    },
+    {
+      "ruleId": "bath_over_kitchen",
+      "principle": "Bathroom Above the Kitchen",
+      "observation": "On this stack the bathroom footprint sits directly above the kitchen footprint. In Vastu Shastra the cooking zone is read as sitting best with nothing of the water zone above it.",
+      "tradition": "vastu",
+      "confidence": 0.62,
+      "severity": "moderate"
+    },
+    {
+      "ruleId": "bath_door_onto_kitchen_dining",
+      "principle": "Bathroom Door onto the Kitchen",
+      "observation": "The bathroom door opens onto the kitchen area rather than onto a hall. In form-school Feng Shui a water-room door facing the cooking zone is read as letting the two zones mix.",
+      "tradition": "fengshui",
+      "confidence": 0.71,
+      "severity": "minor"
+    },
+    {
+      "ruleId": "bath_door_onto_dining",
+      "principle": "Bathroom Door onto the Dining Area",
+      "observation": "The bathroom door opens onto the dining area. In form-school Feng Shui the tradition prefers a hall or a lobby between the water room and the place where a household eats.",
+      "tradition": "fengshui",
+      "confidence": 0.66,
+      "severity": "minor"
+    },
+    {
+      "ruleId": "entry_to_rear_straight_line",
+      "principle": "Entry to Rear Sightline",
+      "observation": "The entry door lines up with the rear opening across an unbroken run of the unit. In form-school Feng Shui this straight line is read as letting arriving chi pass through rather than settle.",
+      "tradition": "fengshui",
+      "confidence": 0.83,
+      "severity": "major"
+    },
+    {
+      "ruleId": "toilet_shares_bed_head_wall",
+      "principle": "Toilet on the Bed-Head Wall",
+      "observation": "The plan shows a toilet on the far side of the wall the bed head would sit against. Both Feng Shui and Vastu Shastra read the head-of-bed wall as a wall the tradition prefers to keep away from plumbing.",
+      "tradition": "both",
+      "confidence": 0.69,
+      "severity": "moderate"
+    },
+    {
+      "ruleId": "center_obstruction",
+      "principle": "Open Centre (Brahmasthan)",
+      "observation": "A structural core sits at the centre of the drawn unit boundary. In Vastu Shastra the Brahmasthan at the centre of a home is the part the tradition keeps open.",
+      "tradition": "vastu",
+      "confidence": 0.74,
+      "severity": "moderate"
+    },
+    {
+      "ruleId": "kitchen_at_entry",
+      "principle": "Kitchen at the Threshold",
+      "observation": "The kitchen sits immediately inside the entry. In Vastu Shastra the cooking zone is read as belonging to the south-east of the home rather than to the threshold.",
+      "tradition": "vastu",
+      "confidence": 0.64,
+      "severity": "minor"
+    },
+    {
+      "ruleId": "bed_wall_options",
+      "principle": "Wall Options for the Bed Head",
+      "observation": "The bedroom offers two solid walls for the head of the bed that are clear of the door line. Both Feng Shui and Vastu Shastra read a solid, supported headboard wall as the placement to look for.",
+      "tradition": "both",
+      "confidence": 0.81
+    }
+  ],
+  "suggestions": [
+    {
+      "title": "Layer the entry threshold",
+      "detail": "A rug, a low console, and a plant just inside the door give an arriving line of movement somewhere to settle before it reaches the rear of the unit.",
+      "effort": "low",
+      "impact": "high"
+    },
+    {
+      "title": "Keep the water-room door closed",
+      "detail": "A self-closing hinge or a simple door stop keeps the bathroom door shut toward the kitchen and dining side, which is the remedy both traditions describe.",
+      "effort": "low",
+      "impact": "medium"
+    },
+    {
+      "title": "Choose the supported bed wall",
+      "detail": "Place the bed head against the solid wall that is clear of the door line and of the bathroom plumbing, and use a solid headboard.",
+      "effort": "medium",
+      "impact": "high"
+    },
+    {
+      "title": "Keep the centre of the home open",
+      "detail": "Leave the middle of the unit free of tall or heavy furniture, with light rugs and low pieces, so the centre reads as open in Vastu terms.",
+      "effort": "low",
+      "impact": "medium"
+    }
+  ]
+}
