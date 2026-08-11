@@ -23,6 +23,7 @@ builder.Services.AddSingleton<HarmonIQ.Api.Services.IListingService, HarmonIQ.Ap
 builder.Services.AddSingleton<HarmonIQ.Api.Services.IGeoContextService, HarmonIQ.Api.Services.GeoContextService>();
 builder.Services.AddHttpClient<HarmonIQ.Api.Services.IClaudeClient, HarmonIQ.Api.Services.ClaudeClient>(
     c => c.Timeout = TimeSpan.FromSeconds(60));
+builder.Services.AddSingleton<HarmonIQ.Api.Services.MockAnalysisService>();
 
 var app = builder.Build();
 
