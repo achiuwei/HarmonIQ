@@ -6,6 +6,8 @@ import { ScoreGauge } from './ScoreGauge';
 import { ElementBars } from './ElementBars';
 import { ModePill } from './ModePill';
 import { RoomCard } from './RoomCard';
+import { SiteCard } from './SiteCard';
+import { NumbersCard } from './NumbersCard';
 
 export interface ReportPanelProps {
   phase: Phase;
@@ -15,7 +17,7 @@ export interface ReportPanelProps {
   onRefine: (r: Refinement) => void;
 }
 
-export function ReportPanel({ phase, listing, report, refinement: _refinement, onRefine: _onRefine }: ReportPanelProps) {
+export function ReportPanel({ phase, listing, report, refinement, onRefine: _onRefine }: ReportPanelProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   if (!report) {
     return (
@@ -53,8 +55,9 @@ export function ReportPanel({ phase, listing, report, refinement: _refinement, o
       {a.rooms.map(room => (
         <RoomCard key={room.photoId} room={room} thumbnailUrl={thumb(room.photoId)} />
       ))}
-      {/* SiteCard: Task 15 */}
-      {/* NumbersCard: Task 15 */}
+      <SiteCard site={a.site}
+        environment={refinement?.environment ?? listing!.environment} />
+      <NumbersCard numerology={a.numerology} />
     </div>
   );
 }
