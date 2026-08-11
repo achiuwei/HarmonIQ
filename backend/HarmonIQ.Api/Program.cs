@@ -43,6 +43,9 @@ app.MapGet("/api/debug/geo", (string address, HarmonIQ.Api.Services.IGeoContextS
 app.UseDefaultFiles(new DefaultFilesOptions { DefaultFileNames = { "mock-ldp.html" } });
 app.UseStaticFiles();
 app.MapControllers();
+
+app.MapGet("/harmoniq", (IWebHostEnvironment env) =>
+    Results.File(Path.Combine(env.WebRootPath, "harmoniq.html"), "text/html"));
 app.Run();
 
 static void LoadDotEnv()
