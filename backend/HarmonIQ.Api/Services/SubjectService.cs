@@ -217,16 +217,24 @@ public class SubjectService(
         else
         {
             var listing = await SafeGetListingAsync(subject.PropertyKey, ct);
-            var hashes = new List<string>();
+            // Carry photoId and roomType alongside the hash: the hash identifies the evidence for
+            // fingerprinting, but the loader needs the photoId to fetch the bytes back.
+            var photos = new List<object>();
             if (listing is not null)
             {
                 foreach (var photo in listing.Photos.Where(p => p.Selected))
                 {
                     var bytes = await listingService.GetPhotoAsync(subject.PropertyKey, photo.PhotoId, null, ct);
-                    if (bytes is not null) hashes.Add(PerceptualHash.Compute(bytes.Data));
+                    if (bytes is null) continue;
+                    photos.Add(new
+                    {
+                        hash = PerceptualHash.Compute(bytes.Data),
+                        photoId = photo.PhotoId,
+                        roomType = photo.SuggestedRoomType,
+                    });
                 }
             }
-            evidenceHashesJson = JsonSerializer.Serialize(hashes, Json.Options);
+            evidenceHashesJson = JsonSerializer.Serialize(photos, Json.Options);
             numbersJson = listing is null ? null : JsonSerializer.Serialize(listing.Numbers, Json.Options);
         }
 

@@ -53,7 +53,7 @@ public class BackfillCommandTests : IDisposable
 
     private sealed class NullEvidenceLoader : IEvidenceLoader
     {
-        public Task<byte[]?> LoadAsync(EvidenceRef reference, CancellationToken ct) =>
+        public Task<byte[]?> LoadAsync(Subject subject, EvidenceRef reference, CancellationToken ct) =>
             Task.FromResult<byte[]?>(null);
     }
 

@@ -133,18 +133,36 @@ public static class EvidenceManifest
 /// <summary>Fetches the bytes behind an evidence item. Only the <b>live</b> path needs them.</summary>
 public interface IEvidenceLoader
 {
-    Task<byte[]?> LoadAsync(EvidenceRef reference, CancellationToken ct);
+    /// <param name="subject">
+    /// Needed for photo evidence: photos are addressed by (propertyKey, photoId) through the
+    /// listing cache, not by a file path or URL.
+    /// </param>
+    Task<byte[]?> LoadAsync(Subject subject, EvidenceRef reference, CancellationToken ct);
 }
 
 /// <summary>
 /// Local-file / HTTP evidence loader. Relative sources resolve under the API content root and
 /// under <c>Data/</c> (where the sample plan images live).
 /// </summary>
-public class FileEvidenceLoader(IWebHostEnvironment env, IHttpClientFactory? httpFactory = null) : IEvidenceLoader
+public class FileEvidenceLoader(
+    IWebHostEnvironment env,
+    IListingService? listings = null,
+    IHttpClientFactory? httpFactory = null) : IEvidenceLoader
 {
-    public async Task<byte[]?> LoadAsync(EvidenceRef reference, CancellationToken ct)
+    public async Task<byte[]?> LoadAsync(Subject subject, EvidenceRef reference, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(subject);
         ArgumentNullException.ThrowIfNull(reference);
+
+        // Photos live in the listing cache (downscaled, in memory, never on disk) and are
+        // addressed by photoId — which the manifest carries as the ref's label.
+        if (reference.Kind == EvidenceRef.Photo && listings is not null
+            && reference.Label is { Length: > 0 } photoId)
+        {
+            var cached = await listings.GetPhotoAsync(subject.PropertyKey, photoId, null, ct);
+            if (cached is not null) return cached.Data;
+        }
+
         if (string.IsNullOrWhiteSpace(reference.Source)) return null;
 
         if (Uri.TryCreate(reference.Source, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
@@ -518,7 +536,7 @@ public class AnalysisPipeline(
     private async Task<ObservationPayload> PerceiveOneAsync(
         Subject subject, EvidenceRef reference, bool live, string? orientationHint, CancellationToken ct)
     {
-        var bytes = live ? await evidence.LoadAsync(reference, ct) : null;
+        var bytes = live ? await evidence.LoadAsync(subject, reference, ct) : null;
 
         if (reference.Kind == EvidenceRef.Plan)
         {
