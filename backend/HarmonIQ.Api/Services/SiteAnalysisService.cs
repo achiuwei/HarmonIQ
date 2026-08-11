@@ -2,160 +2,184 @@ using HarmonIQ.Api.Models;
 
 namespace HarmonIQ.Api.Services;
 
+/// <summary>
+/// The deterministic site lens. Emits one <see cref="RuleOutcome"/> per rule in the requested
+/// principle set's catalogue. An unknown environment value makes a rule <b>not applicable</b>,
+/// never violated; orientation-dependent Feng Shui rules drop to not-applicable when no facing
+/// has resolved, which lowers coverage (and therefore the site lens's weight) rather than the
+/// score. The Vastu catalogue is absolute-direction only and so is orientation-independent —
+/// Vastu's dependence on a facing is enforced by <see cref="VastuGate"/>, not by coverage.
+/// </summary>
 public class SiteAnalysisService
 {
+    /// <summary>Rules versions are per principle set: a Vastu change must not invalidate Feng Shui.</summary>
+    public const string RulesVersionFengShui = "fengshui-2.0";
+    public const string RulesVersionVastu = "vastu-2.0";
+
+    public static string RulesVersionFor(string principleSet) =>
+        principleSet == PrincipleSets.Vastu ? RulesVersionVastu : RulesVersionFengShui;
+
     private static readonly string[] Sides = ["north", "east", "south", "west"];
 
-    public SiteAnalysis Analyze(ListingEnvironment? env, string orientation, string systems)
+    private static readonly string[] Compass =
+        ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+
+    /// <summary>The Feng Shui rules that can only be judged once a facing has resolved.</summary>
+    public static IReadOnlyList<string> OrientationDependentRuleIds { get; } =
+    [
+        "fs.site.bright_hall", "fs.site.unobstructed_facing", "fs.site.water_at_facing",
+        "fs.site.settled_approach", "fs.site.armchair_backing", "fs.site.dry_back",
+    ];
+
+    // ---------------------------------------------------------------- public API
+
+    public LensResult EvaluateSet(ListingEnvironment? env, SubjectOrientation? orientation, string principleSet)
     {
         env ??= ListingEnvironment.AllUnknown;
-        var adhering = new List<Finding>();
-        var violations = new List<ViolationFinding>();
-        var suggestions = new List<Suggestion>();
-        bool Fs() => systems is "both" or "fengshui";
-        bool Va() => systems is "both" or "vastu";
-
-        var front = FrontSides(orientation);
-        var back = front.Select(Opposite).ToArray();
-
-        // --- Feng Shui: sha chi roads (any side; the road points at the building regardless of door) ---
-        if (Fs())
-            foreach (var s in Sides)
-            {
-                var road = env.Side(s).Road;
-                if (road is "t-junction")
-                {
-                    violations.Add(new("T-Junction Facing the Building",
-                        $"A T-junction on the {s} side aims a straight line of fast-moving energy (sha chi) directly at the building.",
-                        "major", "fengshui"));
-                    suggestions.Add(new("Screen the entrance line",
-                        "Break the straight-on rush with a hedge, a pair of planters, or a screen inside the lobby/entry line; heavy curtains on windows facing that side also soften it.",
-                        "low", "high"));
-                }
-                else if (road is "highway")
-                {
-                    violations.Add(new("Rushing Road (Sha Chi)",
-                        $"A highway runs along the {s} side — fast, cutting energy in form-school terms (and real noise).",
-                        "moderate", "fengshui"));
-                    suggestions.Add(new("Soften the rushing side",
-                        $"Dense plants and layered curtains on {s}-facing windows slow the visual rush and dampen noise.",
-                        "low", "medium"));
-                }
-            }
-
-        // --- Feng Shui: orientation-dependent rules ---
-        if (Fs() && front.Length > 0)
-        {
-            foreach (var f in front)
-            {
-                var side = env.Side(f);
-                if (side.Structures == "open")
-                    adhering.Add(new("Bright Hall",
-                        $"Open space to the {f} (the facing direction) forms a 'bright hall' where chi can gather before the entrance.",
-                        "fengshui"));
-                if (side.Structures == "taller-building")
-                {
-                    violations.Add(new("Overshadowed Facing",
-                        $"A much taller structure to the {f} looms over the facing direction, pressing on the building's outlook.",
-                        "moderate", "fengshui"));
-                    suggestions.Add(new("Lift the entry light",
-                        "Brighten the entrance and front-facing rooms with warm lighting and a mirror placed to widen the view — not facing the door.",
-                        "low", "medium"));
-                }
-                if (side.Water is not ("none" or "unknown"))
-                    adhering.Add(new("Water at the Facing",
-                        $"Water ({side.Water}) at the {f} front is classically auspicious — wealth gathers where water settles before the entrance.",
-                        "fengshui"));
-                if (side.Road == "busy")
-                    violations.Add(new("Rushing Chi at the Entrance",
-                        $"A busy road at the {f} front rushes chi past the entrance rather than letting it settle.",
-                        "moderate", "fengshui"));
-            }
-            foreach (var b in back)
-            {
-                var side = env.Side(b);
-                if (side.Structures is "taller-building" or "similar")
-                    adhering.Add(new("Armchair Position",
-                        $"Solid structures to the {b} give the building 'mountain' backing — the classic armchair arrangement.",
-                        "fengshui"));
-                else if (side.Structures == "open")
-                {
-                    violations.Add(new("Missing Backing",
-                        $"Open ground to the {b} leaves the building without support behind — an exposed armchair.",
-                        "minor", "fengshui"));
-                    suggestions.Add(new("Weight the rear rooms",
-                        "Place heavier furniture and earthy tones in rooms on the rear side to symbolically anchor the back.",
-                        "low", "low"));
-                }
-                if (side.Water is not ("none" or "unknown"))
-                    violations.Add(new("Water Behind",
-                        $"Water ({side.Water}) behind the building ({b}) undermines its backing in form-school terms.",
-                        "minor", "fengshui"));
-            }
-        }
-
-        // --- Vastu: absolute-direction rules (no orientation needed) ---
-        if (Va())
-        {
-            foreach (var s in new[] { "north", "east" })
-            {
-                var side = env.Side(s);
-                if (side.Water is not ("none" or "unknown"))
-                    adhering.Add(new("Water in the North/East",
-                        $"A {side.Water} to the {s} sits in the auspicious water zone (toward NE, the zone of Jala).", "vastu"));
-                if (side.Slope == "falls")
-                    adhering.Add(new("Auspicious Slope",
-                        $"Ground falling away to the {s} lets energy and water flow toward the favorable NE.", "vastu"));
-                if (side.Slope == "rises")
-                    violations.Add(new("Rising Slope in the North/East",
-                        $"Ground rising to the {s} blocks the light, open NE quadrant.", "minor", "vastu"));
-                if (side.Structures == "taller-building")
-                    violations.Add(new("Mass in the North/East",
-                        $"A taller structure to the {s} weighs down the quadrant Vastu keeps light and open.", "minor", "vastu"));
-                if (side.Road is not ("none" or "unknown"))
-                    adhering.Add(new("Approach from the North/East",
-                        $"Road access on the {s} side is a favorable approach direction in Vastu.", "vastu"));
-            }
-            foreach (var s in new[] { "south", "west" })
-            {
-                var side = env.Side(s);
-                if (side.Water is not ("none" or "unknown"))
-                {
-                    violations.Add(new("Water in the South/West",
-                        $"A {side.Water} to the {s} places water in the quadrant Vastu reserves for weight and stability.",
-                        "moderate", "vastu"));
-                    suggestions.Add(new("Counterweight the south-west",
-                        "Keep the SW corner of the home visually heavy — bookshelves, earthy colors, stone or ceramic decor.",
-                        "low", "medium"));
-                }
-                if (side.Slope == "falls")
-                {
-                    violations.Add(new("Falling Slope in the South/West",
-                        $"Ground falling away to the {s} drains support from the quadrant that should be highest.",
-                        "moderate", "vastu"));
-                    suggestions.Add(new("Anchor the south-west corner",
-                        "Weight the SW rooms with the heaviest furniture and warm, dark tones.", "low", "medium"));
-                }
-                if (side.Slope == "rises")
-                    adhering.Add(new("Higher Ground in the South/West",
-                        $"Rising ground to the {s} gives the SW the height and weight Vastu favors.", "vastu"));
-                if (side.Structures is "taller-building" or "similar")
-                    adhering.Add(new("Mass in the South/West",
-                        $"Substantial structures to the {s} provide the heaviness Vastu wants in the SW.", "vastu"));
-            }
-        }
-
-        var score = Math.Clamp(
-            70 + 5 * adhering.Count
-               - violations.Sum(v => v.Severity switch { "major" => 18, "moderate" => 10, _ => 5 }),
-            5, 98);
-        return new SiteAnalysis(score, adhering, violations, suggestions);
+        var outcomes = principleSet == PrincipleSets.Vastu
+            ? VastuCatalogue(env)
+            : FengShuiCatalogue(env, ResolvedCardinal(orientation));
+        return RuleEvaluation.ToLens(LensResult.Site, outcomes);
     }
 
-    // Facing side(s): intercardinal orientations touch two sides.
-    private static string[] FrontSides(string orientation) => orientation switch
+    /// <summary>The resolved cardinal/intercardinal facing, or null when orientation is absent or unresolved.</summary>
+    public static string? ResolvedCardinal(SubjectOrientation? o)
     {
-        "north" or "east" or "south" or "west" => [orientation],
+        if (o is null || string.IsNullOrWhiteSpace(o.Source) || o.Source == "none") return null;
+        if (!string.IsNullOrWhiteSpace(o.Cardinal))
+        {
+            var c = o.Cardinal.Trim().ToLowerInvariant();
+            return Compass.Contains(c) ? c : null;
+        }
+        if (o.FacingDegrees is double d) return Compass[(int)Math.Round((((d % 360) + 360) % 360) / 45.0) % 8];
+        return null;
+    }
+
+    public static bool HasResolvedOrientation(SubjectOrientation? o) => ResolvedCardinal(o) is not null;
+
+    // ---------------------------------------------------------------- Feng Shui catalogue (14 rules)
+
+    private static List<RuleOutcome> FengShuiCatalogue(ListingEnvironment env, string? cardinal)
+    {
+        const string set = PrincipleSets.FengShui;
+        var outcomes = new List<RuleOutcome>(14);
+
+        // Sha-chi rules read every side; a road points at the building regardless of the door.
+        foreach (var s in Sides)
+        {
+            var road = env.Side(s).Road;
+            outcomes.Add(Simple($"fs.site.no_t_junction.{s}", set, road,
+                v => v != "t-junction", 3,
+                $"In form-school Feng Shui, a T-junction on the {s} side aims a straight run of fast-moving chi (sha chi) at the building."));
+            outcomes.Add(Simple($"fs.site.calm_road.{s}", set, road,
+                v => v is not ("highway" or "t-junction"), 2,
+                $"In form-school Feng Shui, a highway or straight-on road line on the {s} side keeps chi moving quickly past instead of letting it settle."));
+        }
+
+        var front = FrontSides(cardinal);
+        var back = front.Select(Opposite).ToArray();
+        var frontLabel = front.Length == 0 ? "the facing direction" : $"the {Join(front)} (facing) side";
+        var backLabel = back.Length == 0 ? "the rear" : $"the {Join(back)} (rear) side";
+
+        outcomes.Add(Directional("fs.site.bright_hall", set, front, s => env.Side(s).Structures,
+            v => v == "open", 3,
+            $"In form-school Feng Shui, open ground at {frontLabel} forms a bright hall (ming tang) where chi can gather before the entrance."));
+        outcomes.Add(Directional("fs.site.unobstructed_facing", set, front, s => env.Side(s).Structures,
+            v => v != "taller-building", 2,
+            $"In form-school Feng Shui, a much taller structure at {frontLabel} presses on the building's outlook."));
+        outcomes.Add(Directional("fs.site.water_at_facing", set, front, s => env.Side(s).Water,
+            v => v != "none", 1,
+            $"In form-school Feng Shui, water at {frontLabel} is read as auspicious — wealth is said to gather where water settles before the entrance."));
+        outcomes.Add(Directional("fs.site.settled_approach", set, front, s => env.Side(s).Road,
+            v => v is not ("busy" or "highway" or "t-junction"), 2,
+            $"In form-school Feng Shui, a calm approach at {frontLabel} lets chi settle at the entrance rather than rush past it."));
+        outcomes.Add(Directional("fs.site.armchair_backing", set, back, s => env.Side(s).Structures,
+            v => v is "taller-building" or "similar", 3,
+            $"In form-school Feng Shui, solid structures at {backLabel} give the building 'mountain' support — the classic armchair arrangement."));
+        outcomes.Add(Directional("fs.site.dry_back", set, back, s => env.Side(s).Water,
+            v => v == "none", 1,
+            $"In form-school Feng Shui, water at {backLabel} is read as softening the building's backing."));
+
+        return outcomes;
+    }
+
+    // ---------------------------------------------------------------- Vastu catalogue (10 rules)
+
+    private static List<RuleOutcome> VastuCatalogue(ListingEnvironment env)
+    {
+        const string set = PrincipleSets.Vastu;
+        var outcomes = new List<RuleOutcome>(10);
+
+        foreach (var s in new[] { "north", "east" })
+        {
+            outcomes.Add(Simple($"va.site.open_ne.{s}", set, env.Side(s).Structures,
+                v => v != "taller-building", 3,
+                $"In Vastu Shastra, the {s} side belongs to the light, open north-east quadrant, which is kept free of heavy mass."));
+            outcomes.Add(Simple($"va.site.slope_ne.{s}", set, env.Side(s).Slope,
+                v => v != "rises", 2,
+                $"In Vastu Shastra, ground that falls away toward the {s} lets water and energy run toward the favourable north-east."));
+        }
+
+        foreach (var s in new[] { "south", "west" })
+        {
+            outcomes.Add(Simple($"va.site.grounded_sw.{s}", set, env.Side(s).Structures,
+                v => v is "taller-building" or "similar", 2,
+                $"In Vastu Shastra, substantial structures on the {s} side give the south-west the weight the tradition asks for."));
+            outcomes.Add(Simple($"va.site.slope_sw.{s}", set, env.Side(s).Slope,
+                v => v != "falls", 2,
+                $"In Vastu Shastra, the {s} side is meant to sit high; rising or level ground there supports the south-west quadrant."));
+        }
+
+        var waters = Sides.Select(s => (side: s, value: env.Side(s).Water)).Where(x => Known(x.value)).ToList();
+        outcomes.Add(new RuleOutcome("va.site.water_in_ne_quadrant", set,
+            waters.Count > 0,
+            waters.Count > 0 && !waters.Any(w => w.side is "south" or "west" && w.value != "none"),
+            2,
+            "In Vastu Shastra, standing water sits in the north-east water zone (Jala); water in the south-west sits in the quadrant reserved for weight and stability."));
+
+        var roads = Sides.Select(s => (side: s, value: env.Side(s).Road)).Where(x => Known(x.value)).ToList();
+        outcomes.Add(new RuleOutcome("va.site.approach_from_ne", set,
+            roads.Count > 0,
+            roads.Any(r => r.side is "north" or "east" && r.value != "none"),
+            1,
+            "In Vastu Shastra, road access from the north or east is the favourable approach direction."));
+
+        return outcomes;
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private static bool Known(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value != "unknown";
+
+    /// <summary>A rule read from a single side's value. Unknown ⇒ not applicable, never a violation.</summary>
+    private static RuleOutcome Simple(
+        string id, string set, string value, Func<string, bool> satisfied, int severity, string text)
+    {
+        var applicable = Known(value);
+        return new RuleOutcome(id, set, applicable, applicable && satisfied(value), severity, text);
+    }
+
+    /// <summary>
+    /// A rule read from the facing (or rear) side(s). Applicable when at least one of those sides
+    /// reports a known value; satisfied when every known one satisfies it. With no resolved facing
+    /// there are no sides, so the rule is emitted as not-applicable and coverage falls.
+    /// </summary>
+    private static RuleOutcome Directional(
+        string id, string set, string[] sides, Func<string, string> read,
+        Func<string, bool> satisfied, int severity, string text)
+    {
+        var values = sides.Select(read).Where(Known).ToList();
+        var applicable = values.Count > 0;
+        return new RuleOutcome(id, set, applicable, applicable && values.All(satisfied), severity, text);
+    }
+
+    private static string Join(string[] sides) => string.Join("/", sides);
+
+    // Facing side(s): intercardinal orientations touch two sides.
+    private static string[] FrontSides(string? cardinal) => cardinal switch
+    {
+        "north" or "east" or "south" or "west" => [cardinal],
         "northeast" => ["north", "east"], "southeast" => ["south", "east"],
         "southwest" => ["south", "west"], "northwest" => ["north", "west"],
         _ => [],
@@ -165,4 +189,106 @@ public class SiteAnalysisService
     {
         "north" => "south", "south" => "north", "east" => "west", _ => "east",
     };
+
+    // ---------------------------------------------------------------- v1 shim (removed by Task 7)
+
+    /// <summary>
+    /// v1 flat site analysis. Kept only so Tier-1 leaves the tree green; Tier 2 rewrites the
+    /// call sites onto <see cref="EvaluateSet"/> and deletes this.
+    /// </summary>
+    [Obsolete("Use EvaluateSet(env, orientation, principleSet). Removed in Tier 2 (Task 7).")]
+    public SiteAnalysis Analyze(ListingEnvironment? env, string orientation, string systems)
+    {
+        var so = string.IsNullOrWhiteSpace(orientation) || orientation == "unknown"
+            ? null
+            : new SubjectOrientation("shim", null, orientation, "annotation", null, DateTimeOffset.UtcNow);
+
+        var sets = systems switch
+        {
+            "fengshui" => new[] { PrincipleSets.FengShui },
+            "vastu" => [PrincipleSets.Vastu],
+            _ => [PrincipleSets.FengShui, PrincipleSets.Vastu],
+        };
+
+        var outcomes = sets.SelectMany(s => EvaluateSet(env, so, s).Outcomes).ToList();
+        var applicable = outcomes.Where(o => o.Applicable).ToList();
+
+        var adhering = applicable.Where(o => o.Satisfied)
+            .Select(o => new Finding(RuleTitle(o.RuleId), o.Text, o.PrincipleSet)).ToList();
+        var violations = applicable.Where(o => !o.Satisfied)
+            .Select(o => new ViolationFinding(RuleTitle(o.RuleId), o.Text,
+                o.Severity switch { 3 => "major", 2 => "moderate", _ => "minor" }, o.PrincipleSet)).ToList();
+        var suggestions = applicable.Where(o => !o.Satisfied)
+            .Select(o => RuleRemedy(o.RuleId)).Where(s => s is not null).Select(s => s!)
+            .DistinctBy(s => s.Title).ToList();
+
+        var score = applicable.Count == 0
+            ? 70
+            : Math.Clamp((int)Math.Round(100 * RuleEvaluation.NormalizedScore(outcomes)), 5, 98);
+        return new SiteAnalysis(score, adhering, violations, suggestions);
+    }
+
+    private static string BaseId(string ruleId)
+    {
+        var parts = ruleId.Split('.');
+        return parts.Length > 3 ? string.Join('.', parts.Take(3)) : ruleId;
+    }
+
+    /// <summary>Short human title for a rule id, for report rendering.</summary>
+    public static string RuleTitle(string ruleId) => BaseId(ruleId) switch
+    {
+        "fs.site.no_t_junction" => "T-Junction Line",
+        "fs.site.calm_road" => "Road Speed and Chi",
+        "fs.site.bright_hall" => "Bright Hall",
+        "fs.site.unobstructed_facing" => "Facing Outlook",
+        "fs.site.water_at_facing" => "Water at the Facing",
+        "fs.site.settled_approach" => "Approach to the Entrance",
+        "fs.site.armchair_backing" => "Armchair Backing",
+        "fs.site.dry_back" => "Water Behind",
+        "va.site.open_ne" => "Open North-East",
+        "va.site.slope_ne" => "Slope Toward the North-East",
+        "va.site.grounded_sw" => "Weight in the South-West",
+        "va.site.slope_sw" => "Height in the South-West",
+        "va.site.water_in_ne_quadrant" => "Water Placement",
+        "va.site.approach_from_ne" => "Approach Direction",
+        _ => ruleId,
+    };
+
+    private static Suggestion? RuleRemedy(string ruleId) => BaseId(ruleId) switch
+    {
+        "fs.site.no_t_junction" => new("Screen the entrance line",
+            "Break the straight-on rush with a hedge, a pair of planters, or a screen inside the entry line; heavy curtains on windows facing that side also soften it.", "low", "high"),
+        "fs.site.calm_road" => new("Soften the rushing side",
+            "Dense plants and layered curtains on the windows facing that side slow the visual rush and dampen noise.", "low", "medium"),
+        "fs.site.unobstructed_facing" or "fs.site.bright_hall" => new("Lift the entry light",
+            "Brighten the entrance and front-facing rooms with warm lighting and a mirror placed to widen the view — not facing the door.", "low", "medium"),
+        "fs.site.settled_approach" => new("Slow the approach",
+            "Layer the threshold: a rug, a console, and a plant just inside the door let arriving chi settle.", "low", "medium"),
+        "fs.site.armchair_backing" or "fs.site.dry_back" => new("Weight the rear rooms",
+            "Place heavier furniture and earthy tones in rooms on the rear side to symbolically anchor the back.", "low", "low"),
+        "va.site.open_ne" or "va.site.slope_ne" => new("Keep the north-east light",
+            "Keep the north-east corner of the home uncluttered and well lit, with light colours and low furniture.", "low", "medium"),
+        "va.site.grounded_sw" or "va.site.slope_sw" or "va.site.water_in_ne_quadrant" => new("Counterweight the south-west",
+            "Keep the south-west corner of the home visually heavy — bookshelves, earthy colours, stone or ceramic decor.", "low", "medium"),
+        _ => null,
+    };
+}
+
+/// <summary>
+/// Vastu's core — directional room placement and sleep orientation — cannot run without a
+/// facing, and the leftovers are "Vastu with Vastu removed". This gate therefore <b>overrides
+/// renormalization for Vastu</b> (design §2): a Vastu set with no resolved orientation is
+/// <c>insufficient_evidence</c>, not a renormalized score. Feng Shui degrades through coverage.
+/// </summary>
+public static class VastuGate
+{
+    public static bool CanScore(string principleSet, SubjectOrientation? orientation) =>
+        principleSet != PrincipleSets.Vastu || SiteAnalysisService.HasResolvedOrientation(orientation);
+
+    public static bool CanScore(string principleSet, Cohort cohort) =>
+        principleSet != PrincipleSets.Vastu || cohort.OrientationPath == Cohort.With;
+
+    /// <summary>Builds the cohort a score will be ranked within.</summary>
+    public static Cohort CohortFor(string evidencePath, SubjectOrientation? orientation) =>
+        new(evidencePath, SiteAnalysisService.HasResolvedOrientation(orientation) ? Cohort.With : Cohort.Without);
 }

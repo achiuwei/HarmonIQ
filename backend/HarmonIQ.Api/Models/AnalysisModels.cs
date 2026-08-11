@@ -23,7 +23,14 @@ public record ViolationFinding(
 
 public record Suggestion(string Title, string Detail, string Effort, string Impact);
 
-public record ElementBalance(int Wood, int Fire, int Earth, int Metal, int Water);
+public record ElementBalance(int Wood, int Fire, int Earth, int Metal, int Water)
+{
+    /// <summary>
+    /// An all-zero balance means "nothing was reported", not "no elements present" — a line
+    /// drawing has no materials to read. Callers drop these rather than rendering empty bars.
+    /// </summary>
+    public bool IsAllZero => Wood == 0 && Fire == 0 && Earth == 0 && Metal == 0 && Water == 0;
+}
 
 public record RoomAnalysis(
     string PhotoId, string RoomType, int Score, ElementBalance ElementBalance,
