@@ -1,0 +1,9 @@
+bin/
+obj/
+node_modules/
+.env
+frontend/dist/
+backend/HarmonIQ.Api/wwwroot/embed/
+.DS_Store
+*.user
+.idea/
