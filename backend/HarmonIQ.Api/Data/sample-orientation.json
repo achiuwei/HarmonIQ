@@ -1,0 +1,29 @@
+{
+  "sample-multiplan": {
+    "plan-a": [
+      { "unitNumber": "101", "building": "A", "level": 1, "facingDegrees": 5 },
+      { "unitNumber": "201", "building": "A", "level": 2, "facingDegrees": 10 },
+      { "unitNumber": "301", "building": "A", "level": 3, "facingDegrees": 0 },
+      { "unitNumber": "401", "building": "A", "level": 4, "facingDegrees": 355 },
+      { "unitNumber": "501", "building": "A", "level": 5, "facingDegrees": 15 },
+      { "unitNumber": "601", "building": "A", "level": 6, "facingDegrees": 8 },
+      { "unitNumber": "701", "building": "A", "level": 7, "facingDegrees": 12 },
+      { "unitNumber": "801", "building": "A", "level": 8, "facingDegrees": 2 },
+      { "unitNumber": "901", "building": "A", "level": 9, "facingDegrees": 20 },
+      { "unitNumber": "1001", "building": "A", "level": 10, "facingDegrees": 200 }
+    ],
+    "plan-b": [
+      { "unitNumber": "102", "building": "B", "level": 1, "facingDegrees": 0 },
+      { "unitNumber": "202", "building": "B", "level": 2, "facingDegrees": 10 },
+      { "unitNumber": "302", "building": "B", "level": 3, "facingDegrees": 5 },
+      { "unitNumber": "402", "building": "B", "level": 4, "facingDegrees": 350 },
+      { "unitNumber": "502", "building": "B", "level": 5, "facingDegrees": 15 },
+      { "unitNumber": "602", "building": "B", "level": 6, "facingDegrees": 180 },
+      { "unitNumber": "702", "building": "B", "level": 7, "facingDegrees": 190 },
+      { "unitNumber": "802", "building": "B", "level": 8, "facingDegrees": 175 },
+      { "unitNumber": "902", "building": "B", "level": 9, "facingDegrees": 185 },
+      { "unitNumber": "1002", "building": "B", "level": 10, "facingDegrees": 200 }
+    ],
+    "plan-c": []
+  }
+}
