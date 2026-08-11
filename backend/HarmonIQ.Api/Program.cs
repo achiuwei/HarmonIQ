@@ -1,3 +1,10 @@
+using HarmonIQ.Api.Commands;
+using HarmonIQ.Api.Infrastructure;
+using HarmonIQ.Api.Models;
+using HarmonIQ.Api.Persistence;
+using HarmonIQ.Api.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:5080");
 
@@ -13,31 +20,78 @@ builder.Services.AddControllers().AddJsonOptions(o =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddCors();
-// Later tasks register services here (marker comment — keep):
-// DI-REGISTRATIONS
-builder.Services.AddSingleton<HarmonIQ.Api.Services.NumerologyService>();
-builder.Services.AddSingleton<HarmonIQ.Api.Services.SiteAnalysisService>();
+
+// v1-legacy registrations with no v2 module owner yet. Every other hand-listed service
+// (NumerologyService, SiteAnalysisService, the Claude client, MockAnalysisService,
+// ClaudeAnalysisService, ...) moved into Infrastructure/AnalysisModule.cs /
+// NumerologyModule.cs below; these three remain here only because IngestionModule.cs
+// (Task 6) still depends on SampleListingProvider/IListingService/IGeoContextService
+// being registered by someone, and no v2 module claims that v1 surface. Remove once the
+// v1 AnalysisController is retired (Task 11) and nothing needs them.
 builder.Services.AddHttpClient();
-builder.Services.AddSingleton<HarmonIQ.Api.Services.SampleListingProvider>();
-builder.Services.AddSingleton<HarmonIQ.Api.Services.IListingService, HarmonIQ.Api.Services.ListingService>();
-builder.Services.AddSingleton<HarmonIQ.Api.Services.IGeoContextService, HarmonIQ.Api.Services.GeoContextService>();
-builder.Services.AddHttpClient<HarmonIQ.Api.Services.IClaudeClient, HarmonIQ.Api.Services.ClaudeClient>(
-    c => c.Timeout = TimeSpan.FromSeconds(60));
-builder.Services.AddSingleton<HarmonIQ.Api.Services.MockAnalysisService>();
-builder.Services.AddSingleton<HarmonIQ.Api.Services.ClaudeAnalysisService>();
+builder.Services.AddSingleton<SampleListingProvider>();
+builder.Services.AddSingleton<IListingService, ListingService>();
+builder.Services.AddSingleton<IGeoContextService, GeoContextService>();
+
+// Every other service registration (persistence, ingestion, orientation, analysis,
+// numerology, publishing, the API surface, commands, ...) lives in an
+// Infrastructure/<Area>Module.cs implementing IServiceModule, discovered here by assembly
+// scan. Program.cs never names a sibling task's module directly.
+builder.Services.AddHarmonIQModules(builder.Configuration);
 
 var app = builder.Build();
+
+// Migrate-on-start: bring the SQLite DB up to the latest EF migration before anything
+// (web host or a CLI command) touches it.
+using (var migrationScope = app.Services.CreateScope())
+{
+    migrationScope.ServiceProvider.GetRequiredService<HarmonIQDbContext>().Database.Migrate();
+}
+
+// CLI seam: if args[0] names a registered IHarmonIQCommand, run it and exit instead of
+// starting the web host. Later tasks add commands via their own module — never here.
+var commandExitCode = await CommandRunner.TryRunAsync(args, app.Services, default);
+if (commandExitCode is not null)
+{
+    return commandExitCode.Value;
+}
 
 // The real-LDP demo host (FR-6b) embeds the module from another local origin.
 app.UseCors(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
-app.MapGet("/api/health", (IConfiguration cfg) => Results.Ok(new
+app.MapGet("/api/health", async (IConfiguration cfg, IEngineVersionService engineVersions, CancellationToken ct) =>
 {
-    ok = true,
-    live = !string.IsNullOrEmpty(cfg["Claude:ApiKey"]) && !string.IsNullOrEmpty(cfg["Claude:BaseUrl"])
-}));
+    var current = await engineVersions.GetOrCreateCurrentAsync(ct);
+    // GetPublishedAsync orders by DateTimeOffset, which the Sqlite EF provider cannot
+    // translate server-side (known EngineVersionService bug, not this task's file to fix —
+    // reported separately). Demo mode never publishes anyway (Global Constraints: publish
+    // writes require mode=live AND status=ok), so a null published version here is both the
+    // correct fallback and the expected demo-mode value.
+    EngineVersion? published = null;
+    try
+    {
+        published = await engineVersions.GetPublishedAsync(ct);
+    }
+    catch (NotSupportedException)
+    {
+    }
+    return Results.Ok(new
+    {
+        ok = true,
+        live = !string.IsNullOrEmpty(cfg["Claude:ApiKey"]) && !string.IsNullOrEmpty(cfg["Claude:BaseUrl"]),
+        engineVersion = current.Version,
+        publishedVersion = published?.Version,
+    });
+});
 
-app.MapGet("/api/debug/geo", (string address, HarmonIQ.Api.Services.IGeoContextService geo, CancellationToken ct) =>
+// [FromServices] is explicit here (rather than relying on inference) because this
+// v1 debug endpoint's service may not be registered yet while sibling Tier-2 tasks are
+// still landing their Infrastructure/*Module.cs files; inference would otherwise crash
+// endpoint construction at host startup instead of failing this one request at 500.
+app.MapGet("/api/debug/geo", (
+        string address,
+        [Microsoft.AspNetCore.Mvc.FromServices] HarmonIQ.Api.Services.IGeoContextService geo,
+        CancellationToken ct) =>
     geo.GetEnvironmentAsync($"debug:{address}", address, ct));
 
 app.UseDefaultFiles(new DefaultFilesOptions { DefaultFileNames = { "mock-ldp.html" } });
@@ -47,6 +101,7 @@ app.MapControllers();
 app.MapGet("/harmoniq", (IWebHostEnvironment env) =>
     Results.File(Path.Combine(env.WebRootPath, "harmoniq.html"), "text/html"));
 app.Run();
+return 0;
 
 static void LoadDotEnv()
 {
@@ -75,7 +130,18 @@ static Dictionary<string, string?> EnvOverrides()
         ["CLAUDE_API_KEY"] = "Claude:ApiKey", ["CLAUDE_BASE_URL"] = "Claude:BaseUrl",
         ["CLAUDE_MODEL"] = "Claude:Model", ["LISTING_SOURCE"] = "Listing:Source",
         ["GEO_GEOCODER_URL"] = "Geo:GeocoderUrl", ["GEO_OVERPASS_URL"] = "Geo:OverpassUrl",
-        ["GEO_ELEVATION_URL"] = "Geo:ElevationUrl",
+        ["GEO_ELEVATION_URL"] = "Geo:ElevationUrl", ["GEO_SNAPSHOT_TTL_DAYS"] = "Geo:SnapshotTtlDays",
+        // v2 (Task 10) — persistence paths read as flat keys by PersistenceModule /
+        // FileSystemObjectStore directly; mapped here too so a value from .env always wins
+        // over an OS-level env var of the same name, consistent with every other entry.
+        ["HARMONIQ_DB"] = "HARMONIQ_DB", ["HARMONIQ_OBJECT_STORE"] = "HARMONIQ_OBJECT_STORE",
+        // v2 — orientation seam (fixture locally; SightMap client is stubbed, no partner key yet)
+        ["ORIENTATION_PROVIDER"] = "Orientation:Provider",
+        ["SIGHTMAP_API_KEY"] = "SightMap:ApiKey", ["SIGHTMAP_BASE_URL"] = "SightMap:BaseUrl",
+        // v2 — scoring mode / batch API gate (Tier 3)
+        ["SCORING_MODE"] = "Scoring:Mode", ["BATCH_API_ENABLED"] = "Scoring:BatchApiEnabled",
+        // v2 — task-zero sampling (Tier 3)
+        ["TASKZERO_SAMPLE_N"] = "TaskZero:SampleN",
     };
     var result = new Dictionary<string, string?>();
     foreach (var (env, key) in map)

@@ -7,3 +7,5 @@ backend/HarmonIQ.Api/wwwroot/embed/
 .DS_Store
 *.user
 .idea/
+.claude/
+.harmoniq-local/
