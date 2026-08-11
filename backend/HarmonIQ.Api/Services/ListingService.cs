@@ -206,8 +206,38 @@ public class ListingService(
             string.IsNullOrEmpty(street) ? null : street);
     }
 
-    // Batched thumbnail classification; disabled until Task 9 lands IClaudeClient/Prompts.ClassifyTool.
-    private Task<List<bool>?> TryClassifyWithClaudeAsync(
-        string listingId, List<ListingPhoto> unclassified, CancellationToken ct) =>
-        Task.FromResult<List<bool>?>(null); // enabled in Task 9
+    // Batched thumbnail classification; any failure returns null (callers keep the permissive default).
+    private async Task<List<bool>?> TryClassifyWithClaudeAsync(
+        string listingId, List<ListingPhoto> unclassified, CancellationToken ct)
+    {
+        try
+        {
+            var claude = services.GetService<IClaudeClient>();
+            if (claude is null || !claude.IsConfigured) return null;
+            var content = new List<object>();
+            foreach (var p in unclassified)
+            {
+                var bytes = await GetPhotoAsync(listingId, p.PhotoId, 300, ct);
+                if (bytes is null) return null;
+                content.Add(new { type = "image", source = new { type = "base64", media_type = "image/jpeg", data = Convert.ToBase64String(bytes.Data) } });
+            }
+            content.Add(new { type = "text", text = $"Classify each of the {unclassified.Count} photos above, in order." });
+            var resp = await claude.MessagesAsync(new
+            {
+                model = claude.Model, max_tokens = 1024,
+                tools = new[] { Prompts.ClassifyTool },
+                tool_choice = new { type = "tool", name = "classify_photos" },
+                messages = new object[] { new { role = "user", content } },
+            }, ct);
+            var input = resp.GetProperty("content").EnumerateArray()
+                .First(c => c.GetProperty("type").GetString() == "tool_use").GetProperty("input");
+            return input.GetProperty("categories").EnumerateArray()
+                .Select(c => c.GetString() == "interior").ToList();
+        }
+        catch (Exception e)
+        {
+            log.LogWarning(e, "Photo classification degraded to permissive default");
+            return null;
+        }
+    }
 }

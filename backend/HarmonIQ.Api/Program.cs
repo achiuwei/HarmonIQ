@@ -21,6 +21,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<HarmonIQ.Api.Services.SampleListingProvider>();
 builder.Services.AddSingleton<HarmonIQ.Api.Services.IListingService, HarmonIQ.Api.Services.ListingService>();
 builder.Services.AddSingleton<HarmonIQ.Api.Services.IGeoContextService, HarmonIQ.Api.Services.GeoContextService>();
+builder.Services.AddHttpClient<HarmonIQ.Api.Services.IClaudeClient, HarmonIQ.Api.Services.ClaudeClient>(
+    c => c.Timeout = TimeSpan.FromSeconds(60));
 
 var app = builder.Build();
 
