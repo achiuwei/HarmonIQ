@@ -20,6 +20,7 @@ builder.Services.AddSingleton<HarmonIQ.Api.Services.SiteAnalysisService>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<HarmonIQ.Api.Services.SampleListingProvider>();
 builder.Services.AddSingleton<HarmonIQ.Api.Services.IListingService, HarmonIQ.Api.Services.ListingService>();
+builder.Services.AddSingleton<HarmonIQ.Api.Services.IGeoContextService, HarmonIQ.Api.Services.GeoContextService>();
 
 var app = builder.Build();
 
@@ -31,6 +32,9 @@ app.MapGet("/api/health", (IConfiguration cfg) => Results.Ok(new
     ok = true,
     live = !string.IsNullOrEmpty(cfg["Claude:ApiKey"]) && !string.IsNullOrEmpty(cfg["Claude:BaseUrl"])
 }));
+
+app.MapGet("/api/debug/geo", (string address, HarmonIQ.Api.Services.IGeoContextService geo, CancellationToken ct) =>
+    geo.GetEnvironmentAsync($"debug:{address}", address, ct));
 
 app.UseDefaultFiles(new DefaultFilesOptions { DefaultFileNames = { "mock-ldp.html" } });
 app.UseStaticFiles();
