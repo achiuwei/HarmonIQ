@@ -1,0 +1,93 @@
+{
+  "propertyKey": "sample-multiplan",
+  "title": "The Meridian — Multi-Plan Community",
+  "address": "900 Meridian Ave, Arlington, VA 22203",
+  "latitude": 38.8795,
+  "longitude": -77.1010,
+  "plans": [
+    {
+      "rentalKey": "rk-101",
+      "modelName": "1 Bed 1 Bath",
+      "attachmentId": "att-101",
+      "planImageUrl": "sample-plans/plan-rk-101.png",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 609,
+      "sqftMax": 650,
+      "units": [
+        { "unitNumber": "101", "floor": 1, "sqft": 614 },
+        { "unitNumber": "102", "floor": 1, "sqft": 622 },
+        { "unitNumber": "201", "floor": 2, "sqft": 609 },
+        { "unitNumber": "301", "floor": 3, "sqft": 631 },
+        { "unitNumber": "401", "floor": 4, "sqft": 648 },
+        { "unitNumber": "444", "floor": 4, "sqft": 650 }
+      ]
+    },
+    {
+      "rentalKey": "rk-102",
+      "modelName": "1 Bed 1 Bath",
+      "attachmentId": "att-102",
+      "planImageUrl": "sample-plans/plan-rk-102.png",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 590,
+      "sqftMax": 611,
+      "units": [
+        { "unitNumber": "113", "floor": 1, "sqft": 590 },
+        { "unitNumber": "213", "floor": 2, "sqft": 598 },
+        { "unitNumber": "313", "floor": 3, "sqft": 602 },
+        { "unitNumber": "413", "floor": 4, "sqft": 611 }
+      ]
+    },
+    {
+      "rentalKey": "rk-103",
+      "modelName": "2 Bed 2 Bath",
+      "attachmentId": "att-103",
+      "planImageUrl": "sample-plans/plan-rk-103.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 880,
+      "sqftMax": 940,
+      "units": [
+        { "unitNumber": "302", "floor": 3, "sqft": 880 },
+        { "unitNumber": "402", "floor": 4, "sqft": 895 },
+        { "unitNumber": "502", "floor": 5, "sqft": 910 },
+        { "unitNumber": "602", "floor": 6, "sqft": 925 },
+        { "unitNumber": "702", "floor": 7, "sqft": 940 },
+        { "unitNumber": "888", "floor": 8, "sqft": 905 }
+      ]
+    },
+    {
+      "rentalKey": "rk-104",
+      "modelName": "Studio",
+      "attachmentId": "att-104",
+      "planImageUrl": "sample-plans/plan-rk-104.png",
+      "beds": 0,
+      "baths": 1,
+      "sqftMin": 480,
+      "sqftMax": 530,
+      "units": [
+        { "unitNumber": "105", "floor": 1, "sqft": 480 },
+        { "unitNumber": "205", "floor": 2, "sqft": 495 },
+        { "unitNumber": "305", "floor": 3, "sqft": 500 },
+        { "unitNumber": "405", "floor": 4, "sqft": 512 },
+        { "unitNumber": "1444", "floor": 14, "sqft": 530 }
+      ]
+    },
+    {
+      "rentalKey": "rk-105",
+      "modelName": "2 Bed 1 Bath",
+      "attachmentId": null,
+      "planImageUrl": null,
+      "beds": 2,
+      "baths": 1,
+      "sqftMin": 750,
+      "sqftMax": 770,
+      "units": [
+        { "unitNumber": "501", "floor": 5, "sqft": 750 },
+        { "unitNumber": "502", "floor": 5, "sqft": 765 },
+        { "unitNumber": "503", "floor": 5, "sqft": 770 }
+      ]
+    }
+  ]
+}
