@@ -19,28 +19,13 @@ namespace HarmonIQ.Api.Services;
 /// an availability-table annotation only.
 /// </description></item>
 /// </list>
-/// <see cref="Evaluate"/> is the v1 entry point, kept for existing callers (removed
-/// once Task 11 retires the v1 <c>AnalysisController</c> path in a later tier).
+/// There is no blended entry point: the v1 <c>Evaluate(numbers, systems)</c> — which mixed both
+/// traditions' verdicts into one adjustment, and folded the unit number into the subject's own
+/// score — went out with the v1 <c>AnalysisController</c>. A tradition's reading of a number is
+/// never averaged with another tradition's.
 /// </summary>
 public class NumerologyService
 {
-    public NumerologyResult Evaluate(ListingNumbers? numbers, string systems)
-    {
-        var checks = new List<NumerologyCheck>();
-        if (numbers is not null)
-        {
-            foreach (var (subject, value) in Subjects(numbers))
-            {
-                if (string.IsNullOrWhiteSpace(value)) continue;
-                if (systems is "both" or "fengshui") checks.Add(Chinese(subject, value));
-                if (systems is "both" or "vastu") checks.Add(Vastu(subject, value));
-                if (Western(subject, value) is { } w) checks.Add(w); // only when triggered
-            }
-        }
-        var adj = Math.Clamp(checks.Sum(c => Weight(c.Verdict)), -3, 3);
-        return new NumerologyResult(adj, checks);
-    }
-
     /// <summary>
     /// The subject-level check that actually enters the score (via
     /// <c>ScoreMath.Aggregate</c>'s <c>numerologyAdjustment</c> parameter). Deliberately

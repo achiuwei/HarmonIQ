@@ -190,44 +190,6 @@ public class SiteAnalysisService
         "north" => "south", "south" => "north", "east" => "west", _ => "east",
     };
 
-    // ---------------------------------------------------------------- v1 shim (removed by Task 7)
-
-    /// <summary>
-    /// v1 flat site analysis. Kept only so Tier-1 leaves the tree green; Tier 2 rewrites the
-    /// call sites onto <see cref="EvaluateSet"/> and deletes this.
-    /// </summary>
-    [Obsolete("Use EvaluateSet(env, orientation, principleSet). Removed in Tier 2 (Task 7).")]
-    public SiteAnalysis Analyze(ListingEnvironment? env, string orientation, string systems)
-    {
-        var so = string.IsNullOrWhiteSpace(orientation) || orientation == "unknown"
-            ? null
-            : new SubjectOrientation("shim", null, orientation, "annotation", null, DateTimeOffset.UtcNow);
-
-        var sets = systems switch
-        {
-            "fengshui" => new[] { PrincipleSets.FengShui },
-            "vastu" => [PrincipleSets.Vastu],
-            _ => [PrincipleSets.FengShui, PrincipleSets.Vastu],
-        };
-
-        var outcomes = sets.SelectMany(s => EvaluateSet(env, so, s).Outcomes).ToList();
-        var applicable = outcomes.Where(o => o.Applicable).ToList();
-
-        var adhering = applicable.Where(o => o.Satisfied)
-            .Select(o => new Finding(RuleTitle(o.RuleId), o.Text, o.PrincipleSet)).ToList();
-        var violations = applicable.Where(o => !o.Satisfied)
-            .Select(o => new ViolationFinding(RuleTitle(o.RuleId), o.Text,
-                o.Severity switch { 3 => "major", 2 => "moderate", _ => "minor" }, o.PrincipleSet)).ToList();
-        var suggestions = applicable.Where(o => !o.Satisfied)
-            .Select(o => RuleRemedy(o.RuleId)).Where(s => s is not null).Select(s => s!)
-            .DistinctBy(s => s.Title).ToList();
-
-        var score = applicable.Count == 0
-            ? 70
-            : Math.Clamp((int)Math.Round(100 * RuleEvaluation.NormalizedScore(outcomes)), 5, 98);
-        return new SiteAnalysis(score, adhering, violations, suggestions);
-    }
-
     private static string BaseId(string ruleId)
     {
         var parts = ruleId.Split('.');

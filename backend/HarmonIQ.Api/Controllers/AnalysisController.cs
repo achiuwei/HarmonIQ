@@ -1,101 +1,168 @@
+using System.Text.Json;
 using HarmonIQ.Api.Models;
+using HarmonIQ.Api.Persistence;
 using HarmonIQ.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HarmonIQ.Api.Controllers;
 
+/// <summary>
+/// The session-only refine path — the whole of what is left of v1's <c>/api/analyze</c>.
+///
+/// A reader who knows something the data does not (which way their unit actually faces, what is
+/// across the street, their unit number) can ask what the same deterministic engine would say
+/// with that input. The answer is <b>computed and returned, never stored</b>: no analysis row, no
+/// observation, no projection, nothing filterable. That is not an implementation shortcut — a
+/// renter-supplied Vastu facing is exactly the input design §2 forbids from reaching a published
+/// grade, and the only way to keep that promise structurally is for this endpoint to have no
+/// write path at all.
+///
+/// The re-grade is predictable because scoring is deterministic: the model produced the
+/// observations once, and this endpoint only re-runs the rules over them.
+/// </summary>
 [ApiController]
 public class AnalysisController(
-    IListingService listings, IClaudeClient claude, ClaudeAnalysisService live,
-    MockAnalysisService mock, SiteAnalysisService siteSvc, NumerologyService numerologySvc,
+    HarmonIQDbContext db,
+    SubjectsReadService read,
+    SiteAnalysisService siteService,
+    NumerologyService numerology,
     ILogger<AnalysisController> log) : ControllerBase
 {
-    private static readonly string[] ValidSystems = ["both", "fengshui", "vastu"];
     private static readonly string[] ValidOrientations =
-        ["unknown", "north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+        ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
-    [HttpPost("/api/analyze")]
-    public async Task<IActionResult> Analyze([FromBody] AnalyzeRequest req, CancellationToken ct)
+    [HttpPost("/api/refine")]
+    public async Task<IActionResult> Refine([FromBody] RefineRequest req, CancellationToken ct)
     {
-        // --- Validation (FR-34) ---
-        if (string.IsNullOrWhiteSpace(req.ListingId))
-            return BadRequest(new { error = "listingId is required." });
-        if (req.Photos is null || req.Photos.Count == 0)
-            return BadRequest(new { error = "Select at least one photo to analyze." });
-        if (req.Photos.Count > 6)
-            return BadRequest(new { error = "At most 6 photos can be analyzed per report." });
-        var systems = string.IsNullOrEmpty(req.Systems) ? "both" : req.Systems;
-        if (!ValidSystems.Contains(systems))
-            return BadRequest(new { error = $"systems must be one of: {string.Join(", ", ValidSystems)}." });
-        var orientation = string.IsNullOrEmpty(req.Orientation) ? "unknown" : req.Orientation;
-        if (!ValidOrientations.Contains(orientation))
+        if (req is null || string.IsNullOrWhiteSpace(req.SubjectId))
+        {
+            return BadRequest(new { error = "subjectId is required." });
+        }
+        if (!PrincipleSets.IsKnown(req.PrincipleSet))
+        {
+            return BadRequest(new { error = $"principleSet must be one of: {string.Join(", ", PrincipleSets.All)}." });
+        }
+
+        var orientationOverride = Normalize(req.Orientation);
+        if (req.Orientation is { Length: > 0 } supplied
+            && !string.Equals(supplied, "unknown", StringComparison.OrdinalIgnoreCase)
+            && orientationOverride is null)
+        {
             return BadRequest(new { error = "orientation is not a recognized compass direction." });
-
-        ListingResponse listing;
-        try { listing = await listings.GetListingAsync(req.ListingId, ct); }
-        catch (ListingNotFoundException e) { return BadRequest(new { error = e.Message }); }
-        catch (ListingSourceException e) { return StatusCode(502, new { error = e.Message }); }
-
-        var known = listing.Photos.Select(p => p.PhotoId).ToHashSet();
-        var unknown = req.Photos.FirstOrDefault(p => !known.Contains(p.PhotoId));
-        if (unknown is not null)
-            return BadRequest(new { error = $"Unknown photoId '{unknown.PhotoId}'." });
-
-        // --- Deterministic lenses run concurrently with room analysis (NFR-1) ---
-        var numbers = req.Numbers ?? listing.Numbers;
-        var environment = req.Environment ?? listing.Environment;
-        var numerology = numerologySvc.Evaluate(numbers, systems);
-        var site = siteSvc.Analyze(environment, orientation, systems);
-
-        // --- Room photos ---
-        List<RoomAnalysis> rooms;
-        string mode;
-        string? modelId = null;
-        string? notice = null;
-        if (claude.IsConfigured)
-        {
-            try
-            {
-                var inputs = new List<RoomInput>();
-                foreach (var p in req.Photos)
-                {
-                    var bytes = await listings.GetPhotoAsync(req.ListingId, p.PhotoId, null, ct);
-                    if (bytes is null)
-                        return StatusCode(502, new { error = $"Photo '{p.PhotoId}' could not be fetched from the listing source." });
-                    inputs.Add(new RoomInput(p.PhotoId, p.RoomType, bytes.Data));
-                }
-                var siteTask = live.RephraseSiteAsync(site, ct);
-                rooms = await live.AnalyzeRoomsAsync(inputs, systems, orientation, ct);
-                site = await siteTask;
-                mode = "live";
-                modelId = claude.Model;
-            }
-            catch (ClaudeUnavailableException e)
-            {
-                log.LogWarning(e, "Claude unavailable; serving demo analysis");
-                rooms = mock.AnalyzeRooms(req.Photos, systems);
-                mode = "demo";
-                notice = "The Claude endpoint was unavailable, so this is a built-in demonstration analysis.";
-            }
-        }
-        else
-        {
-            rooms = mock.AnalyzeRooms(req.Photos, systems);
-            mode = "demo";
-            notice = "No Claude API key is configured, so this is a built-in demonstration analysis.";
         }
 
-        // --- Merge (FR-25) ---
-        var overall = ScoreMath.Overall(rooms, site, numerology.ScoreAdjustment);
-        var summary = mode == "live"
-            ? await live.SummarizeAsync(rooms, site, numerology, ct)
-            : ScoreMath.LocalSummary(rooms, site, numerology);
+        var subject = await db.Subjects.FirstOrDefaultAsync(s => s.Id == req.SubjectId, ct);
+        if (subject is null)
+        {
+            return NotFound(new { error = $"Unknown subject '{req.SubjectId}'." });
+        }
 
-        return Ok(new AnalyzeResponse(
-            mode, modelId, notice,
-            new ListingSummary(listing.ListingId, listing.Title, listing.Address, listing.Url),
-            new AnalysisResult(
-                overall, ScoreMath.Grade(overall), summary,
-                ScoreMath.AverageElements(rooms), rooms, site, numerology)));
+        var inputSet = await read.LatestInputSetAsync(subject.Id, ct);
+        if (inputSet is null)
+        {
+            return NotFound(new { error = $"Subject '{subject.Id}' has no input snapshot to refine from." });
+        }
+
+        var engine = await read.ResolveEngineAsync(null, ct);
+        if (engine is null)
+        {
+            return NotFound(new { error = "No engine version is available." });
+        }
+
+        // Perception is never re-run here: refine reads the observations already on disk. A
+        // subject with none has nothing to re-grade, and inventing evidence would make the
+        // "predictable re-grade" promise false.
+        var refs = EvidenceManifest.Parse(subject, inputSet);
+        var hashes = refs.Select(r => r.Hash).ToList();
+        var observationRows = await db.Observations
+            .Where(o => o.SubjectId == subject.Id && hashes.Contains(o.EvidenceHash))
+            .ToListAsync(ct);
+
+        var payloads = observationRows
+            .Select(o => Deserialize<ObservationPayload>(o.PayloadJson))
+            .Where(p => p is not null)
+            .Select(p => p!)
+            .ToList();
+
+        var storedOrientation = Deserialize<SubjectOrientation>(inputSet.OrientationJson);
+        var storedHasOrientation = SiteAnalysisService.HasResolvedOrientation(storedOrientation);
+
+        var orientation = orientationOverride is null
+            ? storedOrientation
+            : new SubjectOrientation(subject.Id, null, orientationOverride, "annotation", 1.0, DateTimeOffset.UtcNow);
+
+        var environment = req.Environment
+            ?? Deserialize<ListingEnvironment>(inputSet.EnvironmentJson)
+            ?? ListingEnvironment.AllUnknown;
+
+        // A floor-plan snapshot stores its unit list here, not a ListingNumbers object; a failed
+        // parse simply means "no subject-level numbers", which is the honest reading.
+        var numbers = req.Numbers ?? Deserialize<ListingNumbers>(inputSet.NumbersJson);
+
+        var input = new DerivationInput(
+            AnalysisPipeline.EvidencePath(subject, inputSet),
+            payloads,
+            environment,
+            orientation,
+            PrincipleSets.All.ToDictionary(
+                s => s, s => numerology.EvaluateSubject(numbers, s), StringComparer.Ordinal),
+            Calibration.FromJson(engine.CalibrationJson));
+
+        var derived = AnalysisDerivation.Derive(req.PrincipleSet, input, siteService);
+
+        log.LogDebug(
+            "Session-only refine for {SubjectId}/{PrincipleSet} (nothing persisted)",
+            subject.Id, req.PrincipleSet);
+
+        return Ok(new RefineResponse(
+            derived.Score,
+            Persisted: false,
+            Notice(req.PrincipleSet, orientationOverride, storedHasOrientation)));
+    }
+
+    /// <summary>
+    /// The copy that keeps a session-only number from reading as a published one. Tradition-framed,
+    /// no negative superlative, and explicit that a renter-supplied facing never becomes a grade.
+    /// </summary>
+    private static string Notice(string principleSet, string? orientationOverride, bool storedHasOrientation)
+    {
+        var tradition = LocalSummary.TraditionName(principleSet);
+
+        if (principleSet == PrincipleSets.Vastu && orientationOverride is not null && !storedHasOrientation)
+        {
+            return $"This {tradition} reading uses the facing you supplied ({orientationOverride}). "
+                 + "It is a session-only estimate: it is not saved, it is not part of the published grade, "
+                 + "and it is not used when filtering search results.";
+        }
+
+        if (orientationOverride is not null)
+        {
+            return $"This {tradition} reading reflects the facing you supplied ({orientationOverride}). "
+                 + "It is a session-only recalculation — nothing was saved and the published grade is unchanged.";
+        }
+
+        return $"This {tradition} reading is a session-only recalculation from the details you entered. "
+             + "Nothing was saved and the published grade is unchanged.";
+    }
+
+    private static string? Normalize(string? orientation)
+    {
+        if (string.IsNullOrWhiteSpace(orientation)) return null;
+        var value = orientation.Trim().ToLowerInvariant();
+        return ValidOrientations.Contains(value) ? value : null;
+    }
+
+    private static T? Deserialize<T>(string? json) where T : class
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, Json.Options);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }

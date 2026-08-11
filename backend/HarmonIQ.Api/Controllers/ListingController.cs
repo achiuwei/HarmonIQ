@@ -4,11 +4,17 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HarmonIQ.Api.Controllers;
 
+/// <summary>
+/// Listing metadata and the photo passthrough. The passthrough stays exactly as v1 left it —
+/// listing media is proxied through this origin rather than hotlinked, and that is unrelated to
+/// scoring. The only v2 change here is the removal of the <c>?brand=</c> parameter, which existed
+/// solely so the retired <c>/api/analyze</c> contract could echo a brand back to the demo host.
+/// </summary>
 [ApiController]
 public class ListingController(IListingService listings) : ControllerBase
 {
     [HttpGet("/api/listing/{listingId}")]
-    public async Task<IActionResult> GetListing(string listingId, [FromQuery] string? brand, CancellationToken ct)
+    public async Task<IActionResult> GetListing(string listingId, CancellationToken ct)
     {
         try
         {

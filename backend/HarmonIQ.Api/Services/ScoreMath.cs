@@ -104,46 +104,4 @@ public static class ScoreMath
         lens is null || lens.Coverage <= 0 ? null : (int)Math.Round(100 * Clamp01(lens.Score01), MidpointRounding.AwayFromZero);
 
     private static double Clamp01(double v) => double.IsNaN(v) ? 0.0 : Math.Clamp(v, 0.0, 1.0);
-
-    // ---------------------------------------------------------------- v1 shims (removed in Tier 2)
-
-    [Obsolete("Blended scoring is replaced by per-set Aggregate(...). Removed in Tier 2 (Task 11).")]
-    public static int Overall(IReadOnlyList<RoomAnalysis> rooms, SiteAnalysis site, int numerologyAdjustment)
-    {
-        var baseScore = rooms.Count == 0
-            ? site.Score
-            : 0.7 * rooms.Average(r => r.Score) + 0.3 * site.Score;
-        return Math.Clamp((int)Math.Round(baseScore) + numerologyAdjustment, 0, 100);
-    }
-
-    [Obsolete("Use AverageElements(IEnumerable<ElementBalance?>, principleSet). Removed in Tier 2 (Task 11).")]
-    public static ElementBalance AverageElements(IReadOnlyList<RoomAnalysis> rooms) =>
-        AverageElements(rooms.Select(r => (ElementBalance?)r.ElementBalance)) ?? new ElementBalance(0, 0, 0, 0, 0);
-
-    [Obsolete("Summaries move to the report writer in Tier 2 (Task 7).")]
-    public static string LocalSummary(
-        IReadOnlyList<RoomAnalysis> rooms, SiteAnalysis site, NumerologyResult numerology)
-    {
-        var bestRoom = rooms.OrderByDescending(r => r.Score).FirstOrDefault();
-        var strongest = bestRoom?.Adhering.FirstOrDefault();
-        var allSuggestions = rooms.SelectMany(r => r.Suggestions.Select(s => (room: r.RoomType, s)))
-            .Concat(site.Suggestions.Select(s => (room: "the site", s)))
-            .OrderByDescending(x => Rank(x.s.Impact)).ThenBy(x => Rank(x.s.Effort))
-            .ToList();
-        var parts = new List<string>();
-        parts.Add(strongest is not null && bestRoom is not null
-            ? $"The strongest asset is the {bestRoom.RoomType} — {strongest.Observation.TrimEnd('.')}."
-            : "This home shows a mixed harmony profile across its rooms and site.");
-        if (allSuggestions.Count > 0)
-        {
-            var top = allSuggestions[0];
-            parts.Add($"The highest-impact fix: {top.s.Title} ({top.room}) — {top.s.Detail.TrimEnd('.')}.");
-        }
-        var unlucky = numerology.Checks.Count(c => c.Verdict == "unlucky");
-        if (unlucky > 0)
-            parts.Add($"Note: {unlucky} of the listing's numbers read as inauspicious in the selected traditions — easy to soften with the suggested remedies.");
-        return string.Join(" ", parts);
-
-        static int Rank(string level) => level switch { "high" => 3, "medium" => 2, _ => 1 };
-    }
 }

@@ -115,33 +115,4 @@ public class MockAnalysisService
             Suggestions: suggestions,
             Coverage: coverage));
     }
-
-    // ------------------------------------------------------------------ v1 adapter (deleted by Task 11)
-
-    /// <summary>
-    /// v1 blended-analysis shape, kept only so the v1 <c>AnalysisController</c> (owned by Task 11)
-    /// keeps compiling and the demo endpoint keeps working while the v2 API is built. Derived from
-    /// the v2 observation — there is no second template set.
-    /// </summary>
-    [Obsolete("Use ObserveRoom(...) and the analysis pipeline. Removed with the v1 controller (Task 11).")]
-    public List<RoomAnalysis> AnalyzeRooms(IReadOnlyList<PhotoSelection> photos, string systems)
-    {
-        return photos.Select(p =>
-        {
-            var obs = ObserveRoom(p);
-            var tpl = Template(obs.RoomType);
-            bool Fits(string t) => systems == "both" || t == "both" || t == systems;
-            var kept = obs.Findings.Where(f => Fits(f.Tradition)).ToList();
-
-            var score = Math.Clamp(tpl.GetProperty("score").GetInt32() + DemoJitter(p.PhotoId), 0, 100);
-            return new RoomAnalysis(
-                p.PhotoId, obs.RoomType, score,
-                obs.ElementBalance ?? new ElementBalance(0, 0, 0, 0, 0),
-                kept.Where(f => f.Severity is null)
-                    .Select(f => new Finding(f.Principle, f.Observation, f.Tradition)).ToList(),
-                kept.Where(f => f.Severity is not null)
-                    .Select(f => new ViolationFinding(f.Principle, f.Observation, f.Severity!, f.Tradition)).ToList(),
-                obs.Suggestions.ToList());
-        }).ToList();
-    }
 }
