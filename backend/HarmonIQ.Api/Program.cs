@@ -17,6 +17,9 @@ builder.Services.AddCors();
 // DI-REGISTRATIONS
 builder.Services.AddSingleton<HarmonIQ.Api.Services.NumerologyService>();
 builder.Services.AddSingleton<HarmonIQ.Api.Services.SiteAnalysisService>();
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<HarmonIQ.Api.Services.SampleListingProvider>();
+builder.Services.AddSingleton<HarmonIQ.Api.Services.IListingService, HarmonIQ.Api.Services.ListingService>();
 
 var app = builder.Build();
 

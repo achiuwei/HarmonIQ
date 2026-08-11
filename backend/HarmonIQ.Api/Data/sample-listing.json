@@ -1,0 +1,22 @@
+{
+  "listingId": "sample",
+  "title": "The Elm — 2BR/2BA · Unit 414",
+  "address": "123 Main St, Arlington, VA 22201",
+  "url": "https://www.apartments.com/the-elm-arlington-va/sample/",
+  "photos": [
+    { "photoId": "p1", "file": "bedroom.jpg",  "caption": "Master Bedroom",    "interior": true,  "selected": true,  "suggestedRoomType": "Bedroom" },
+    { "photoId": "p2", "file": "living.jpg",   "caption": "Living Room",       "interior": true,  "selected": true,  "suggestedRoomType": "Living Room" },
+    { "photoId": "p3", "file": "kitchen.jpg",  "caption": "Chef's Kitchen",    "interior": true,  "selected": true,  "suggestedRoomType": "Kitchen" },
+    { "photoId": "p4", "file": "bathroom.jpg", "caption": "Primary Bath",      "interior": true,  "selected": true,  "suggestedRoomType": "Bathroom" },
+    { "photoId": "p5", "file": "office.jpg",   "caption": "Den / Home Office", "interior": true,  "selected": true,  "suggestedRoomType": "Home Office" },
+    { "photoId": "p6", "file": "exterior.jpg", "caption": "Building Exterior", "interior": false, "selected": false, "suggestedRoomType": null },
+    { "photoId": "p7", "file": "floorplan.jpg","caption": "Floor Plan",        "interior": false, "selected": false, "suggestedRoomType": null }
+  ],
+  "numbers": { "unitNumber": "414", "floor": 4, "streetNumber": "123" },
+  "environment": {
+    "north": { "road": "t-junction", "water": "none",    "structures": "open",            "slope": "level" },
+    "east":  { "road": "none",       "water": "pond",    "structures": "open",            "slope": "falls" },
+    "south": { "road": "quiet",      "water": "none",    "structures": "taller-building", "slope": "level" },
+    "west":  { "road": "none",       "water": "unknown", "structures": "similar",         "slope": "unknown" }
+  }
+}
