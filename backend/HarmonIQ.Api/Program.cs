@@ -16,6 +16,7 @@ builder.Services.AddCors();
 // Later tasks register services here (marker comment — keep):
 // DI-REGISTRATIONS
 builder.Services.AddSingleton<HarmonIQ.Api.Services.NumerologyService>();
+builder.Services.AddSingleton<HarmonIQ.Api.Services.SiteAnalysisService>();
 
 var app = builder.Build();
 
