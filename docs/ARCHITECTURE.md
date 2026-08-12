@@ -352,7 +352,7 @@ denominator; zero placements → `null`.
 
 | Path | Status |
 |---|---|
-| `SightMapOrientationProvider` + `ISightMapClient` | **Stubbed.** The API (`api.sightmap.com/v1`, API-key auth, unit↔floor↔building↔plan linkage) is real and confirmed; whether unit polygons are exposed as true-north geo-referenced vectors at the relevant tier is **unverified** and is a CoStar↔Engrain partner data request. Never a network call in tests. Selected by `ORIENTATION_PROVIDER=sightmap`. |
+| `SightMapOrientationProvider` + `ISightMapClient` | **Stubbed, and aimed at the wrong product.** Verified 2026-08-11 against the published OpenAPI spec: SightMap's REST API exposes **no unit geometry at all** — no polygon, no coordinate, no bearing — so a key would not make this provider work. Unit geometry lives in **Unit Map** (`api.unitmap.com`), a separate Engrain product, in map space (pixels). See [orientation-data-sources.md](orientation-data-sources.md). Never a network call in tests. Selected by `ORIENTATION_PROVIDER=sightmap`. |
 | Annotation fallback | If vectors aren't true-north: a one-time per-property rotation annotation from satellite imagery, `Source = "annotation"`. |
 | `FixtureOrientationProvider` | **The default and the only exercisable local path.** Covers all three shapes — resolves, splits to `none`, and absent. |
 
@@ -853,7 +853,7 @@ search returns zero hits with an honest caveat (§10).
 | # | Risk | Mitigation / gate |
 |---|---|---|
 | 1 | The floor-plan lens creates no real per-plan variance → per-plan grades are cosmetic | Task-zero variance measurement; fallback is a property grade + per-plan layout notes |
-| 2 | SightMap does not expose usable true-north geometry | `IOrientationProvider` seam + satellite rotation-annotation fallback. **Raised stakes: two of five traditions are now gated on it** |
+| 2 | SightMap does not expose usable true-north geometry — **confirmed 2026-08-11: it exposes no geometry at all** | Now one question, not a partnership: is Unit Map's undocumented `geojson_url` populated with WGS84 unit polygons? If yes, orientation is direct. If no, footprint alignment is a measured fallback (~43% coverage at a safe gate). [orientation-data-sources.md](orientation-data-sources.md). **Two of five traditions gated on this** |
 | 3 | Vision cannot actually read LDP plan images at served resolution | Task-zero dual-scoring |
 | 4 | `data-rentalkey` is unstable across ingests | Perceptual content-signature fallback; ambiguous → no row |
 | 5 | Internal listing/geo access does not materialize | Backfill is hard-gated on it; public endpoints stay dev/demo only |

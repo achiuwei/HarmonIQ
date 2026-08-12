@@ -10,6 +10,10 @@ namespace HarmonIQ.Api.Services.Orientation;
 /// (<c>Data/sample-multiplan-listing.json</c>) rather than placeholder plan ids:
 /// - <c>0xbkbx0</c> (Crane): 8/9 placed units concentrate north (89% ≥ 80%) → resolves, source
 ///   "sightmap".
+/// - <c>ry5b9z1</c> (Olive): 5/6 placed units concentrate south (83% ≥ 80%) → resolves. Present
+///   because apartments-web's seeded fixture scores Olive on three traditions including the two
+///   orientation-gated ones; without a facing here the two repos told opposite stories about the
+///   same plan. See <c>docs/orientation-data-sources.md</c>.
 /// - <c>bmgrv28</c> (Willow): placed units split 50/50 north/south → resolves to
 ///   <c>Source = "none"</c> (below the 80% threshold).
 /// - Every other plan, including <c>bncrtt8</c> (Sandpiper): absent entirely from the fixture

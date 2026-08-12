@@ -36,8 +36,16 @@ public class ApiContractTests : IDisposable
     private const string ScoredPlanKey = "0xbkbx0";      // "Crane", 9 units
     private const string ScoredUnitNumber = "3350";
 
-    /// <summary>A plan absent from the orientation fixture, so Vastu stays gated off.</summary>
-    private const string UnorientedPlanKey = "ry5b9z1";  // "Olive", 6 units
+    /// <summary>
+    /// A plan absent from the orientation fixture, so Vastu stays gated off and renter-supplied
+    /// orientation demonstrably scores something the published grade cannot.
+    ///
+    /// Any of the seventeen unoriented plans works. This was "Olive" (<c>ry5b9z1</c>) until Olive
+    /// was given a facing to match apartments-web's seeded fixture, which scores it on three
+    /// traditions including the two orientation-gated ones. If you orient this plan too, move the
+    /// constant rather than weakening the assertions.
+    /// </summary>
+    private const string UnorientedPlanKey = "z9tqplx";  // "Laurel", 6 units
 
     /// <summary>
     /// The plan whose image <see cref="ImagelessPlanSource"/> strips.

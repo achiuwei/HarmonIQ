@@ -119,6 +119,22 @@ public class FixtureOrientationProviderTests
     }
 
     [Fact]
+    public async Task OlivePlan_Resolves_SoApartmentsWebsThreeTraditionRowsAreReachable()
+    {
+        // ry5b9z1 ("Olive"): 5/6 units concentrate south (83% ≥ 80%). This entry exists to keep the
+        // two repos telling the same story — apartments-web's seeded fixture scores Olive on Feng
+        // Shui, Vastu AND Kasō, and the latter two are orientation-gated, so an unoriented Olive
+        // here would mean the LDP loses two chips the moment the consumer switches from
+        // FixtureGradeSource to the live feed. See docs/orientation-data-sources.md.
+        var provider = new FixtureOrientationProvider(FixturePath());
+        var result = await provider.ResolveAsync("349246f", "ry5b9z1", CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal("sightmap", result!.Source);
+        Assert.Equal("south", result.Cardinal);
+    }
+
+    [Fact]
     public async Task SplitPlan_ResolvesToNone()
     {
         var provider = new FixtureOrientationProvider(FixturePath());
