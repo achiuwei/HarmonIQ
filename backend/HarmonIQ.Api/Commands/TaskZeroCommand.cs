@@ -60,13 +60,13 @@ public class TaskZeroCommand(IServiceScopeFactory scopeFactory, IConfiguration c
         var engine = await engineVersions.GetOrCreateCurrentAsync(ct);
         var runStart = DateTimeOffset.UtcNow;
 
-        // Local scope has exactly two fixture properties (plan Task 13): the five-plan
-        // `sample-multiplan` (rk-101..104 imaged, rk-105 deliberately imageless) and the
-        // single-listing `sample`. The design's `--n` is a PROPERTY count (it names the
-        // 1,000-PROPERTY sampling job, and SamplingReport carries SampledProperties and
-        // SampledSubjects as distinct measures) — every subject of a sampled property is
-        // included, so N never truncates a property's plan set midway and hides the imageless
-        // one. The design's 1,000-property job itself is not attempted here.
+        // Local scope has exactly two fixture properties (plan Task 13): the twenty-plan Enzo
+        // property `349246f` and the single-listing 108 Ambiance `tk93cec`, both scraped from
+        // apartments.com. The design's `--n` is a PROPERTY count (it names the 1,000-PROPERTY
+        // sampling job, and SamplingReport carries SampledProperties and SampledSubjects as
+        // distinct measures) — every subject of a sampled property is included, so N never
+        // truncates a property's plan set midway. The design's 1,000-property job itself is not
+        // attempted here.
         var propertyKeys = new[] { SampleListingProvider.MultiplanPropertyKey, SampleListingProvider.ListingId };
 
         var subjectsByProperty = new Dictionary<string, IReadOnlyList<Subject>>(StringComparer.Ordinal);

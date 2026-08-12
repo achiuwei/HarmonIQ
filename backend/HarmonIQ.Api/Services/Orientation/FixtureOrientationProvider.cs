@@ -7,13 +7,18 @@ namespace HarmonIQ.Api.Services.Orientation;
 /// <c>propertyKey -> planKey -> unit placements</c>. This is the only way the with-orientation
 /// path is exercisable locally (no SightMap key exists), so the fixture is written to cover all
 /// three Q5 shapes, keyed onto real plans from the multi-plan fixture
-/// (<c>Data/sample-multiplan-listing.json</c>, task 5) rather than placeholder plan ids:
-/// - <c>rk-101</c>: 9/10 placed units concentrate north (90% ≥ 80%) → resolves, source
+/// (<c>Data/sample-multiplan-listing.json</c>) rather than placeholder plan ids:
+/// - <c>0xbkbx0</c> (Crane): 8/9 placed units concentrate north (89% ≥ 80%) → resolves, source
 ///   "sightmap".
-/// - <c>rk-102</c>: placed units split ~50/50 north/south → resolves to <c>Source = "none"</c>
-///   (below the 80% threshold).
-/// - <c>rk-105</c> (the plan with no image, so already unscored on that path): absent entirely
-///   from the fixture → <c>ResolveAsync</c> returns <c>null</c>, same as "not covered".
+/// - <c>bmgrv28</c> (Willow): placed units split 50/50 north/south → resolves to
+///   <c>Source = "none"</c> (below the 80% threshold).
+/// - Every other plan, including <c>bncrtt8</c> (Sandpiper): absent entirely from the fixture
+///   → <c>ResolveAsync</c> returns <c>null</c>, same as "not covered". Most of the twenty plans
+///   sit here, so the orientation-gated traditions keep demonstrating
+///   <c>insufficient_evidence</c> across the grid.
+///
+/// The facings are invented: apartments.com publishes no compass data, and no SightMap key exists
+/// on this machine. The unit numbers and plan keys are real.
 ///
 /// Any other propertyKey/subjectId combination absent from the fixture also returns
 /// <c>null</c> ("not covered"), matching the interface contract.

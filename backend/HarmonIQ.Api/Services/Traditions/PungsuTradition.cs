@@ -19,7 +19,6 @@ public sealed class PungsuTradition : ITradition
 {
     public string Id => PrincipleSets.Pungsu;
     public string DisplayName => "Pungsu-jiri";
-    public string Culture => "Korean";
     public int Order => 3;
     public string RulesVersion => "pungsu-1.0";
     public bool RequiresOrientation => false;
@@ -135,7 +134,7 @@ public sealed class PungsuTradition : ITradition
     }
 
     public string InterpretPrompt(string factSheet, string? orientationHint) =>
-        InterpretPromptBuilder.Build(DisplayName, Culture, Doctrine, factSheet, orientationHint);
+        InterpretPromptBuilder.Build(DisplayName, Doctrine, factSheet, orientationHint);
 
     private const string Doctrine = """
 Pungsu-jiri reads a dwelling through landform first and compass second. Its governing image is

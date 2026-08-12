@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using HarmonIQ.Api.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -6,6 +7,113 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 
 namespace HarmonIQ.Api.Services;
+
+/// <summary>A point on the earth, as a listing page publishes it.</summary>
+public record GeoPoint(double Latitude, double Longitude);
+
+/// <summary>
+/// The media type of image bytes, read from their signature. Vision requests must declare a type
+/// that matches the bytes — a mismatch is a 400, not a coercion — and a real property's plan
+/// drawings are a mix of PNG and JPEG, so the type cannot be assumed from the call site.
+/// </summary>
+public static class ImageMediaType
+{
+    public const string Png = "image/png";
+    public const string Jpeg = "image/jpeg";
+
+    public static string Detect(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
+        {
+            return Png;
+        }
+        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+        {
+            return Jpeg;
+        }
+
+        // Unrecognized bytes keep the historical default rather than guessing: if they are not a
+        // real image the request fails either way, and this keeps PNG plans behaving as before.
+        return Png;
+    }
+}
+
+/// <summary>
+/// Where listing markup is read from. Defaults to the production site; <c>Listing:BaseUrl</c>
+/// repoints it at a locally-served LDP, which is how a demo machine reads real markup at all —
+/// the production site answers an automated client with 403.
+/// </summary>
+public static class ListingSource
+{
+    public const string DefaultBaseUrl = "https://www.apartments.com";
+
+    /// <summary>The token a path template substitutes the listing key into.</summary>
+    public const string KeyToken = "{key}";
+
+    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// How long to wait for listing markup. A non-positive or unparseable value falls back to the
+    /// default rather than being honoured — a zero timeout cancels every request instantly, which
+    /// would present as "the listing source is unreachable" for a source that is perfectly fine.
+    /// </summary>
+    public static TimeSpan TimeoutFrom(string? seconds) =>
+        int.TryParse(seconds, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) && parsed > 0
+            ? TimeSpan.FromSeconds(parsed)
+            : DefaultTimeout;
+
+    public static string UrlFor(string? baseUrl, string listingId, string? pathTemplate = null)
+    {
+        var root = (string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl).TrimEnd('/');
+        var slug = listingId.Replace('~', '/').Trim('/');
+        var path = string.IsNullOrWhiteSpace(pathTemplate)
+            ? $"{slug}/"
+            : pathTemplate.TrimStart('/').Replace(KeyToken, slug, StringComparison.Ordinal);
+        return $"{root}/{path}";
+    }
+
+    /// <summary>
+    /// Listing photos, in markup order, deduplicated. The host is matched by its <c>img</c>/
+    /// <c>images</c> prefix rather than a fixed name, so a test-environment host
+    /// (<c>imgtst1</c>) reads the same as production (<c>images1</c>) — but a JPEG served from
+    /// the site itself (logos, chrome) is not a listing photo and is left out.
+    /// </summary>
+    public static IReadOnlyList<string> PhotoUrls(string html) =>
+        PhotoUrlRegex.Matches(html).Select(m => m.Value).Distinct(StringComparer.Ordinal).ToList();
+
+    /// <summary>
+    /// The listing's own published position, from its schema.org <c>GeoCoordinates</c> block, or
+    /// null when the page publishes none. Anchoring on the block's <c>@type</c> keeps map widgets
+    /// and ad payloads — which carry their own lat/long pairs — from being mistaken for the
+    /// subject's location.
+    /// </summary>
+    public static GeoPoint? Coordinates(string html)
+    {
+        var m = GeoCoordinatesRegex.Match(html);
+        return m.Success
+            && double.TryParse(m.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
+            && double.TryParse(m.Groups[2].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon)
+                ? new GeoPoint(lat, lon)
+                : null;
+    }
+
+    private static readonly Regex GeoCoordinatesRegex = new(
+        """"@type"\s*:\s*"[^"]*GeoCoordinates"[\s\S]{0,200}?"latitude"\s*:\s*(-?\d+(?:\.\d+)?)[\s\S]{0,200}?"longitude"\s*:\s*(-?\d+(?:\.\d+)?)"""",
+        RegexOptions.Compiled);
+
+    private static readonly Regex PhotoUrlRegex = new(
+        @"https://(?:img|images)[a-z0-9]*\.apartments\.com/[^\s""'\\]+?\.jpg", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Whether to accept a self-signed certificate for this URL. True only for loopback: a dev
+    /// certificate is expected there, and nowhere else is worth the risk of a silent MITM.
+    /// </summary>
+    public static bool AllowsDevCertificate(Uri uri)
+    {
+        ArgumentNullException.ThrowIfNull(uri);
+        return uri.IsLoopback;
+    }
+}
 
 public interface IListingService
 {
@@ -24,10 +132,13 @@ public interface IListingService
 
 public class ListingService(
     SampleListingProvider sample, IMemoryCache cache, IHttpClientFactory httpFactory,
-    IServiceProvider services, ILogger<ListingService> log) : IListingService
+    IServiceProvider services, IConfiguration config, ILogger<ListingService> log) : IListingService
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(30);
     public const int MaxLongEdge = 1568;
+
+    /// <summary>The named client whose handler accepts a loopback dev certificate.</summary>
+    public const string HttpClientName = "listing";
 
     public async Task<ListingResponse> GetListingAsync(string listingId, CancellationToken ct)
     {
@@ -39,13 +150,26 @@ public class ListingService(
         return listing;
     }
 
-    public Task<ListingEnvironment?> GetPropertyEnvironmentAsync(string propertyKey, CancellationToken ct)
+    public async Task<ListingEnvironment?> GetPropertyEnvironmentAsync(string propertyKey, CancellationToken ct)
     {
         if (propertyKey == SampleListingProvider.ListingId)
-            return Task.FromResult<ListingEnvironment?>(sample.GetListing().Environment);
+            return sample.GetListing().Environment;
         if (propertyKey == SampleListingProvider.MultiplanPropertyKey)
-            return Task.FromResult<ListingEnvironment?>(sample.GetMultiplanEnvironment());
-        return Task.FromResult<ListingEnvironment?>(null);
+            return sample.GetMultiplanEnvironment();
+
+        // A real property resolves through its own listing page, which carries the environment the
+        // geo lookup built from the page's published coordinates. The listing is memoized, so a
+        // floor-plan subject asking for its property's surroundings costs no second fetch.
+        // Unreachable or unscrapable stays null — the caller reads that as "sides unknown".
+        try
+        {
+            return (await GetListingAsync(propertyKey, ct)).Environment;
+        }
+        catch (Exception e) when (e is ListingNotFoundException or ListingSourceException)
+        {
+            log.LogWarning(e, "No environment for property {PropertyKey}: listing unavailable", propertyKey);
+            return null;
+        }
     }
 
     public async Task<PhotoBytes?> GetPhotoAsync(string listingId, string photoId, int? width, CancellationToken ct)
@@ -97,9 +221,9 @@ public class ListingService(
     private async Task<ListingResponse> ScrapeListingAsync(string listingId, CancellationToken ct)
     {
         var slug = listingId.Replace('~', '/').Trim('/');
-        var url = $"https://www.apartments.com/{slug}/";
-        var http = httpFactory.CreateClient();
-        http.Timeout = TimeSpan.FromSeconds(10);
+        var url = ListingSource.UrlFor(config["Listing:BaseUrl"], listingId, config["Listing:PathTemplate"]);
+        var http = httpFactory.CreateClient(HttpClientName);
+        http.Timeout = ListingSource.TimeoutFrom(config["Listing:TimeoutSeconds"]);
         http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 
         string html;
@@ -127,8 +251,7 @@ public class ListingService(
         if (ld.Success) address = $"{ld.Groups[1].Value}, {ld.Groups[2].Value}, {ld.Groups[3].Value}";
 
         // Photos: distinct CDN image URLs in listing-page markup, capped at 12 candidates.
-        var photoUrls = Regex.Matches(html, @"https://images1?\.apartments\.com/[^\s""'\\]+?\.jpg")
-            .Select(m => m.Value).Distinct().Take(12).ToList();
+        var photoUrls = ListingSource.PhotoUrls(html).Take(12).ToList();
         if (photoUrls.Count == 0)
             throw new ListingNotFoundException($"Listing '{listingId}' has no photos we can read.");
 
@@ -177,9 +300,13 @@ public class ListingService(
             if (photos[i].Interior && selectedCount < 6) { photos[i] = photos[i] with { Selected = true }; selectedCount++; }
 
         var numbers = ExtractNumbers(title, html, address);
-        var environment = string.IsNullOrEmpty(address)
+        // The page's own coordinates when it publishes them; the address is the fallback the geo
+        // service geocodes. With neither, there is nothing to place the listing on a map with.
+        var point = ListingSource.Coordinates(html);
+        var environment = string.IsNullOrEmpty(address) && point is null
             ? ListingEnvironment.AllUnknown
-            : await services.GetRequiredService<IGeoContextService>().GetEnvironmentAsync(listingId, address, ct);
+            : await services.GetRequiredService<IGeoContextService>()
+                .GetEnvironmentAsync(listingId, address, point, ct);
 
         return new ListingResponse(listingId, title, address, url, photos, numbers, environment);
     }
@@ -192,7 +319,7 @@ public class ListingService(
             cache.TryGetValue($"photo-urls:{listingId}", out map);
         }
         if (map is null || !map.TryGetValue(photoId, out var src)) return null;
-        var http = httpFactory.CreateClient();
+        var http = httpFactory.CreateClient(HttpClientName);
         http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         try { return await http.GetByteArrayAsync(src, ct); }
         catch (Exception e) { log.LogWarning(e, "Photo fetch failed: {Url}", src); return null; }

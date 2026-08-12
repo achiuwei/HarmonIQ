@@ -1,93 +1,584 @@
 {
-  "propertyKey": "sample-multiplan",
-  "title": "The Meridian — Multi-Plan Community",
-  "address": "900 Meridian Ave, Arlington, VA 22203",
-  "latitude": 38.8795,
-  "longitude": -77.1010,
+  "propertyKey": "349246f",
+  "title": "Enzo",
+  "address": "3100 Martin, Irvine, CA 92612",
+  "url": "https://www.apartments.com/enzo-irvine-ca/349246f/",
+  "latitude": 33.67253,
+  "longitude": -117.85841,
   "plans": [
     {
-      "rentalKey": "rk-101",
-      "modelName": "1 Bed 1 Bath",
-      "attachmentId": "att-101",
-      "planImageUrl": "sample-plans/plan-rk-101.png",
+      "rentalKey": "0xbkbx0",
+      "modelName": "Crane",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-0xbkbx0.png",
       "beds": 1,
       "baths": 1,
-      "sqftMin": 609,
-      "sqftMax": 650,
+      "sqftMin": 714,
+      "sqftMax": 714,
       "units": [
-        { "unitNumber": "101", "floor": 1, "sqft": 614 },
-        { "unitNumber": "102", "floor": 1, "sqft": 622 },
-        { "unitNumber": "201", "floor": 2, "sqft": 609 },
-        { "unitNumber": "301", "floor": 3, "sqft": 631 },
-        { "unitNumber": "401", "floor": 4, "sqft": 648 },
-        { "unitNumber": "444", "floor": 4, "sqft": 650 }
+        {
+          "unitNumber": "3350",
+          "floor": null,
+          "sqft": 714,
+          "price": 3538,
+          "availability": "Now"
+        },
+        {
+          "unitNumber": "3136",
+          "floor": null,
+          "sqft": 714,
+          "price": 3608,
+          "availability": "Now"
+        },
+        {
+          "unitNumber": "3455",
+          "floor": null,
+          "sqft": 714,
+          "price": 3538,
+          "availability": "Sep 2"
+        },
+        {
+          "unitNumber": "3152",
+          "floor": null,
+          "sqft": 714,
+          "price": 3623,
+          "availability": "Sep 7"
+        },
+        {
+          "unitNumber": "3158",
+          "floor": null,
+          "sqft": 714,
+          "price": 3623,
+          "availability": "Sep 10"
+        },
+        {
+          "unitNumber": "3457",
+          "floor": null,
+          "sqft": 714,
+          "price": 3523,
+          "availability": "Sep 16"
+        },
+        {
+          "unitNumber": "3451",
+          "floor": null,
+          "sqft": 714,
+          "price": 3538,
+          "availability": "Sep 16"
+        },
+        {
+          "unitNumber": "3458",
+          "floor": null,
+          "sqft": 714,
+          "price": 3538,
+          "availability": "Sep 16"
+        },
+        {
+          "unitNumber": "3555",
+          "floor": null,
+          "sqft": 714,
+          "price": 3598,
+          "availability": "Sep 16"
+        }
       ]
     },
     {
-      "rentalKey": "rk-102",
-      "modelName": "1 Bed 1 Bath",
-      "attachmentId": "att-102",
-      "planImageUrl": "sample-plans/plan-rk-102.png",
+      "rentalKey": "gch7mgw",
+      "modelName": "Egret",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-gch7mgw.png",
       "beds": 1,
       "baths": 1,
-      "sqftMin": 590,
-      "sqftMax": 611,
+      "sqftMin": 592,
+      "sqftMax": 592,
       "units": [
-        { "unitNumber": "113", "floor": 1, "sqft": 590 },
-        { "unitNumber": "213", "floor": 2, "sqft": 598 },
-        { "unitNumber": "313", "floor": 3, "sqft": 602 },
-        { "unitNumber": "413", "floor": 4, "sqft": 611 }
+        {
+          "unitNumber": "3465",
+          "floor": null,
+          "sqft": 592,
+          "price": 2944,
+          "availability": "Aug 15"
+        },
+        {
+          "unitNumber": "3520",
+          "floor": null,
+          "sqft": 592,
+          "price": 3004,
+          "availability": "Aug 15"
+        },
+        {
+          "unitNumber": "3318",
+          "floor": null,
+          "sqft": 592,
+          "price": 2934,
+          "availability": "Aug 20"
+        },
+        {
+          "unitNumber": "3264",
+          "floor": null,
+          "sqft": 592,
+          "price": 2924,
+          "availability": "Aug 28"
+        },
+        {
+          "unitNumber": "3128",
+          "floor": null,
+          "sqft": 592,
+          "price": 2854,
+          "availability": "Sep 5"
+        }
       ]
     },
     {
-      "rentalKey": "rk-103",
-      "modelName": "2 Bed 2 Bath",
-      "attachmentId": "att-103",
-      "planImageUrl": "sample-plans/plan-rk-103.png",
+      "rentalKey": "1n992v6",
+      "modelName": "Swallow",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-1n992v6.png",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 792,
+      "sqftMax": 792,
+      "units": [
+        {
+          "unitNumber": "3239",
+          "floor": null,
+          "sqft": 792,
+          "price": 3590,
+          "availability": "Oct 7"
+        }
+      ]
+    },
+    {
+      "rentalKey": "bmgrv28",
+      "modelName": "Willow",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-bmgrv28.png",
       "beds": 2,
       "baths": 2,
-      "sqftMin": 880,
-      "sqftMax": 940,
+      "sqftMin": 1020,
+      "sqftMax": 1103,
       "units": [
-        { "unitNumber": "302", "floor": 3, "sqft": 880 },
-        { "unitNumber": "402", "floor": 4, "sqft": 895 },
-        { "unitNumber": "502", "floor": 5, "sqft": 910 },
-        { "unitNumber": "602", "floor": 6, "sqft": 925 },
-        { "unitNumber": "702", "floor": 7, "sqft": 940 },
-        { "unitNumber": "888", "floor": 8, "sqft": 905 }
+        {
+          "unitNumber": "3356",
+          "floor": null,
+          "sqft": 1020,
+          "price": 4250,
+          "availability": "Now"
+        },
+        {
+          "unitNumber": "3156",
+          "floor": null,
+          "sqft": 1020,
+          "price": 4280,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3466",
+          "floor": null,
+          "sqft": 1103,
+          "price": 4290,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3566",
+          "floor": null,
+          "sqft": 1103,
+          "price": 4350,
+          "availability": "Aug 24"
+        },
+        {
+          "unitNumber": "3409",
+          "floor": null,
+          "sqft": 1020,
+          "price": 4320,
+          "availability": "Aug 31"
+        },
+        {
+          "unitNumber": "3166",
+          "floor": null,
+          "sqft": 1103,
+          "price": 4235,
+          "availability": "Sep 7"
+        }
       ]
     },
     {
-      "rentalKey": "rk-104",
-      "modelName": "Studio",
-      "attachmentId": "att-104",
-      "planImageUrl": "sample-plans/plan-rk-104.png",
+      "rentalKey": "ry5b9z1",
+      "modelName": "Olive",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-ry5b9z1.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1099,
+      "sqftMax": 1109,
+      "units": [
+        {
+          "unitNumber": "3214",
+          "floor": null,
+          "sqft": 1099,
+          "price": 4320,
+          "availability": "Now"
+        },
+        {
+          "unitNumber": "3461",
+          "floor": null,
+          "sqft": 1109,
+          "price": 4325,
+          "availability": "Now"
+        },
+        {
+          "unitNumber": "3314",
+          "floor": null,
+          "sqft": 1099,
+          "price": 4275,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3114",
+          "floor": null,
+          "sqft": 1099,
+          "price": 4400,
+          "availability": "Aug 22"
+        },
+        {
+          "unitNumber": "3361",
+          "floor": null,
+          "sqft": 1109,
+          "price": 4315,
+          "availability": "Sep 11"
+        },
+        {
+          "unitNumber": "3161",
+          "floor": null,
+          "sqft": 1109,
+          "price": 4385,
+          "availability": "Oct 10"
+        }
+      ]
+    },
+    {
+      "rentalKey": "8y7t9l1",
+      "modelName": "Eucalyptus",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-8y7t9l1.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1058,
+      "sqftMax": 1058,
+      "units": [
+        {
+          "unitNumber": "3122",
+          "floor": null,
+          "sqft": 1058,
+          "price": 3930,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3322",
+          "floor": null,
+          "sqft": 1058,
+          "price": 3860,
+          "availability": "Aug 28"
+        },
+        {
+          "unitNumber": "3563",
+          "floor": null,
+          "sqft": 1058,
+          "price": 3930,
+          "availability": "Sep 6"
+        },
+        {
+          "unitNumber": "3110",
+          "floor": null,
+          "sqft": 1058,
+          "price": 3985,
+          "availability": "Sep 7"
+        }
+      ]
+    },
+    {
+      "rentalKey": "q9vzpnx",
+      "modelName": "Sycamore",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-q9vzpnx.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1157,
+      "sqftMax": 1157,
+      "units": [
+        {
+          "unitNumber": "3400",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4440,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3221",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4465,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3319",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4475,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3508",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4485,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3121",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4545,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3208",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4420,
+          "availability": "Sep 7"
+        },
+        {
+          "unitNumber": "3321",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4475,
+          "availability": "Sep 7"
+        },
+        {
+          "unitNumber": "3500",
+          "floor": null,
+          "sqft": 1157,
+          "price": 4485,
+          "availability": "Sep 7"
+        }
+      ]
+    },
+    {
+      "rentalKey": "z9tqplx",
+      "modelName": "Laurel",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-z9tqplx.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1145,
+      "sqftMax": 1145,
+      "units": [
+        {
+          "unitNumber": "3107",
+          "floor": null,
+          "sqft": 1145,
+          "price": 4656,
+          "availability": "Aug 17"
+        },
+        {
+          "unitNumber": "3311",
+          "floor": null,
+          "sqft": 1145,
+          "price": 4586,
+          "availability": "Aug 18"
+        },
+        {
+          "unitNumber": "3207",
+          "floor": null,
+          "sqft": 1145,
+          "price": 5035,
+          "availability": "Aug 22"
+        },
+        {
+          "unitNumber": "3411",
+          "floor": null,
+          "sqft": 1145,
+          "price": 4596,
+          "availability": "Aug 31"
+        },
+        {
+          "unitNumber": "3407",
+          "floor": null,
+          "sqft": 1145,
+          "price": 4611,
+          "availability": "Aug 31"
+        },
+        {
+          "unitNumber": "3111",
+          "floor": null,
+          "sqft": 1145,
+          "price": 4656,
+          "availability": "Sep 7"
+        }
+      ]
+    },
+    {
+      "rentalKey": "kjr0yhc",
+      "modelName": "Sagebrush Loft",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-kjr0yhc.jpg",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1167,
+      "sqftMax": 1167,
+      "units": [
+        {
+          "unitNumber": "3509",
+          "floor": null,
+          "sqft": 1167,
+          "price": 4840,
+          "availability": "Aug 27"
+        }
+      ]
+    },
+    {
+      "rentalKey": "tme8vf8",
+      "modelName": "Seagrass Loft",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-tme8vf8.jpg",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1257,
+      "sqftMax": 1257,
+      "units": [
+        {
+          "unitNumber": "3511",
+          "floor": null,
+          "sqft": 1257,
+          "price": 5224,
+          "availability": "Aug 31"
+        }
+      ]
+    },
+    {
+      "rentalKey": "f3lww9t",
+      "modelName": "Bluestem Loft",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-f3lww9t.jpg",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1305,
+      "sqftMax": 1305,
+      "units": [
+        {
+          "unitNumber": "3521",
+          "floor": null,
+          "sqft": 1305,
+          "price": 5383,
+          "availability": "Sep 16"
+        },
+        {
+          "unitNumber": "3519",
+          "floor": null,
+          "sqft": 1305,
+          "price": 5413,
+          "availability": "Sep 16"
+        }
+      ]
+    },
+    {
+      "rentalKey": "bncrtt8",
+      "modelName": "Sandpiper",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-bncrtt8.png",
       "beds": 0,
       "baths": 1,
-      "sqftMin": 480,
-      "sqftMax": 530,
-      "units": [
-        { "unitNumber": "105", "floor": 1, "sqft": 480 },
-        { "unitNumber": "205", "floor": 2, "sqft": 495 },
-        { "unitNumber": "305", "floor": 3, "sqft": 500 },
-        { "unitNumber": "405", "floor": 4, "sqft": 512 },
-        { "unitNumber": "1444", "floor": 14, "sqft": 530 }
-      ]
+      "sqftMin": 552,
+      "sqftMax": 552,
+      "units": []
     },
     {
-      "rentalKey": "rk-105",
-      "modelName": "2 Bed 1 Bath",
+      "rentalKey": "vxblkhf",
+      "modelName": "Heron Loft",
       "attachmentId": null,
-      "planImageUrl": null,
-      "beds": 2,
+      "planImageUrl": "sample-plans/plan-vxblkhf.jpg",
+      "beds": 1,
       "baths": 1,
-      "sqftMin": 750,
-      "sqftMax": 770,
-      "units": [
-        { "unitNumber": "501", "floor": 5, "sqft": 750 },
-        { "unitNumber": "502", "floor": 5, "sqft": 765 },
-        { "unitNumber": "503", "floor": 5, "sqft": 770 }
-      ]
+      "sqftMin": 697,
+      "sqftMax": 697,
+      "units": []
+    },
+    {
+      "rentalKey": "n67x1wq",
+      "modelName": "Crane A Affordable M",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-n67x1wq.png",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 714,
+      "sqftMax": 714,
+      "units": []
+    },
+    {
+      "rentalKey": "0tpken2",
+      "modelName": "Pelican",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-0tpken2.jpg",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 742,
+      "sqftMax": 742,
+      "units": []
+    },
+    {
+      "rentalKey": "lxcvkpf",
+      "modelName": "Swallow A Affordable M",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-lxcvkpf.png",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 792,
+      "sqftMax": 792,
+      "units": []
+    },
+    {
+      "rentalKey": "559e2rp",
+      "modelName": "Cormorant Loft",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-559e2rp.jpg",
+      "beds": 1,
+      "baths": 1,
+      "sqftMin": 928,
+      "sqftMax": 928,
+      "units": []
+    },
+    {
+      "rentalKey": "1q190c7",
+      "modelName": "Juniper Loft",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-1q190c7.jpg",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1238,
+      "sqftMax": 1238,
+      "units": []
+    },
+    {
+      "rentalKey": "y65dsxs",
+      "modelName": "Willow A Affordable M",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-y65dsxs.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1020,
+      "sqftMax": 1020,
+      "units": []
+    },
+    {
+      "rentalKey": "1gz8rc5",
+      "modelName": "Eucalyptus B Affordable M",
+      "attachmentId": null,
+      "planImageUrl": "sample-plans/plan-1gz8rc5.png",
+      "beds": 2,
+      "baths": 2,
+      "sqftMin": 1058,
+      "sqftMax": 1058,
+      "units": []
     }
   ]
 }

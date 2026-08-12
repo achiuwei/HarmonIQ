@@ -4,15 +4,20 @@ using HarmonIQ.Api.Models;
 namespace HarmonIQ.Api.Services;
 
 /// <summary>
-/// Local demo listing/plan source. <c>sample</c> (a single listing, unchanged from v1 — byte-for
-/// -byte identical behaviour) and <c>sample-multiplan</c> (Task 5's five-plan fixture, used to
-/// exercise the multi-plan ingestion path in <see cref="SubjectService"/>) are the only two
-/// property keys this provider knows.
+/// Local demo listing/plan source, backed by two real apartments.com listings scraped into
+/// <c>Data/</c>. <c>tk93cec</c> (108 Ambiance, Irvine — a single-family house, so the compact
+/// score card path) and <c>349246f</c> (Enzo, Irvine — twenty floor plans, used to exercise the
+/// multi-plan ingestion path in <see cref="SubjectService"/>) are the only two property keys this
+/// provider knows.
+///
+/// Both keys are the listings' own apartments.com keys rather than invented ids, because
+/// apartments-web's per-plan chips key off the LDP's <c>data-rentalkey</c> — a fixture using
+/// made-up keys could never line up with the consumer side.
 /// </summary>
 public class SampleListingProvider : IPlanSource
 {
-    public const string ListingId = "sample";
-    public const string MultiplanPropertyKey = "sample-multiplan";
+    public const string ListingId = "tk93cec";
+    public const string MultiplanPropertyKey = "349246f";
 
     private readonly ListingResponse _listing;
     private readonly Dictionary<string, string> _photoFiles = [];

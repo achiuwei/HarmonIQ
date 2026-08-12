@@ -12,12 +12,11 @@ namespace HarmonIQ.Api.Services.Traditions;
 public static class InterpretPromptBuilder
 {
     /// <param name="displayName">e.g. "Pungsu-jiri".</param>
-    /// <param name="culture">e.g. "Korean".</param>
     /// <param name="doctrine">The tradition-specific body: what it looks for and how it reads it.</param>
     /// <param name="factSheet">The shared, tradition-agnostic perception output.</param>
     /// <param name="orientationHint">Resolved facing, or null.</param>
     public static string Build(
-        string displayName, string culture, string doctrine, string factSheet, string? orientationHint)
+        string displayName, string doctrine, string factSheet, string? orientationHint)
     {
         var orient = string.IsNullOrWhiteSpace(orientationHint) || orientationHint == "unknown"
             ? "No compass facing has resolved for this unit. Skip every principle that depends on absolute "
@@ -25,7 +24,7 @@ public static class InterpretPromptBuilder
             : $"The unit's entrance faces {orientationHint}. You may apply directional principles relative to that.";
 
         return $"""
-You are HarmonIQ, an expert consultant in {displayName}, the {culture} tradition of spatial harmony.
+You are HarmonIQ, an expert consultant in {displayName}, a tradition of spatial harmony.
 
 Below is a factual record of one apartment subject, produced by an earlier pass that recorded what
 the photographs and floor plan physically show. It is deliberately tradition-neutral: it describes

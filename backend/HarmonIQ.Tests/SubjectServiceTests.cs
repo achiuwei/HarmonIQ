@@ -304,7 +304,65 @@ public class SubjectServiceTests : IDisposable
             Task.FromResult<Orientation.SubjectOrientation?>(null);
     }
 
-    private class FakeListingService : IListingService
+    /// <summary>
+    /// The snapshot is what scoring reads; a hash identifies evidence but cannot locate it. Writing
+    /// the plan's image source alongside its hash is what lets the live path load the drawing at
+    /// all — without it every plan fails perception with "No plan image bytes".
+    /// </summary>
+    [Fact]
+    public async Task SnapshotCarriesThePlanImageSourceAndNotOnlyItsHash()
+    {
+        var planSource = new FakePlanSource
+        {
+            ["349246f"] = [Plan("rk-1", "Crane", 1, 1), Plan("rk-2", "Egret", 2, 2)],
+        };
+        var service = MakeService(planSource, new FakePlanImageLoader { ["img.png"] = MakePng(1) });
+        var subjects = await service.MaterializeAsync("349246f", CancellationToken.None);
+
+        var snapshot = await service.SnapshotAsync(subjects[0], CancellationToken.None);
+
+        Assert.Contains("img.png", snapshot.EvidenceHashesJson, StringComparison.Ordinal);
+    }
+
+    private static readonly ListingEnvironment Resolved = new(
+        new SideEnvironment("busy", "none", "taller-building", "level"),
+        new SideEnvironment("quiet", "none", "similar", "rises"),
+        new SideEnvironment("none", "river", "open", "falls"),
+        new SideEnvironment("quiet", "none", "open", "level"));
+
+    /// <summary>
+    /// The environment TTL exists so a published grade cannot drift when OSM data changes
+    /// underneath a frozen engine. An all-unknown snapshot never supported a grade, so pinning it
+    /// preserves nothing — it just freezes a failed lookup in place for the whole TTL, which is
+    /// how one unreachable geo call turns into ninety days of an empty site lens.
+    /// </summary>
+    [Fact]
+    public async Task ReResolvesAnAllUnknownEnvironmentRatherThanPinningIt()
+    {
+        var blind = MakeService(listing: new FakeListingService(null));
+        var subject = (await blind.MaterializeAsync("prop-env", CancellationToken.None))[0];
+        await blind.SnapshotAsync(subject, CancellationToken.None);
+
+        var seeing = MakeService(listing: new FakeListingService(Resolved));
+        var snapshot = await seeing.SnapshotAsync(subject, CancellationToken.None);
+
+        Assert.Contains("taller-building", snapshot.EnvironmentJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task KeepsAResolvedEnvironmentPinnedWithinTheTtl()
+    {
+        var seeing = MakeService(listing: new FakeListingService(Resolved));
+        var subject = (await seeing.MaterializeAsync("prop-pinned", CancellationToken.None))[0];
+        await seeing.SnapshotAsync(subject, CancellationToken.None);
+
+        var changed = MakeService(listing: new FakeListingService(ListingEnvironment.AllUnknown));
+        var snapshot = await changed.SnapshotAsync(subject, CancellationToken.None);
+
+        Assert.Contains("taller-building", snapshot.EnvironmentJson, StringComparison.Ordinal);
+    }
+
+    private class FakeListingService(ListingEnvironment? environment = null) : IListingService
     {
         public Task<ListingResponse> GetListingAsync(string listingId, CancellationToken ct) =>
             throw new ListingNotFoundException("not in fake");
@@ -313,6 +371,6 @@ public class SubjectServiceTests : IDisposable
             Task.FromResult<PhotoBytes?>(null);
 
         public Task<ListingEnvironment?> GetPropertyEnvironmentAsync(string propertyKey, CancellationToken ct) =>
-            Task.FromResult<ListingEnvironment?>(null);
+            Task.FromResult(environment);
     }
 }

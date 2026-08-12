@@ -95,6 +95,14 @@ public static class EvidenceManifest
         if (isPlanPath)
         {
             refs = refs.Where(r => r.Kind == EvidenceRef.Plan).Take(1).ToList();
+
+            // An older snapshot may list the plan as a bare hash, which identifies the evidence
+            // but cannot locate it. The subject still knows where its own drawing lives, so fill
+            // the gap rather than failing perception on a snapshot this parser can repair.
+            if (refs is [{ Source: null or "" } bare] && !string.IsNullOrWhiteSpace(subject.PlanImageUrl))
+            {
+                refs = [bare with { Source = subject.PlanImageUrl, Label = bare.Label ?? subject.ExternalPlanKey }];
+            }
             if (string.IsNullOrWhiteSpace(subject.PlanImageUrl) && subject.PlanImageHash is null)
             {
                 return [];
@@ -310,16 +318,23 @@ public static class AnalysisDerivation
         foreach (var ruleId in FloorPlanRules.AllowedRuleIds)
         {
             var entry = FloorPlanRuleCatalogue.For(ruleId);
-            var adverse = relevant.Where(f => f.RuleId == ruleId && f.Severity is not null).ToList();
-            var favourable = relevant.FirstOrDefault(f => f.RuleId == ruleId && f.Severity is null);
+            var reported = relevant.Where(f => f.RuleId == ruleId).ToList();
+
+            // Polarity comes from the finding's own claim about the configuration, not from
+            // whether it happens to carry a severity: severity is optional in the lens schema, so
+            // reading its absence as "all clear" turns every unscored violation into a pass.
+            var shows = reported.Where(f => f.Present).ToList();
+            var rulesOut = reported.Where(f => !f.Present).ToList();
 
             var applicable = FloorPlanRuleCatalogue.IsApplicable(ruleId, plan.BoundaryFullyDrawn)
-                && (!entry.PositiveEvidence || favourable is not null || adverse.Count > 0);
+                && (!entry.PositiveEvidence || reported.Count > 0);
 
-            var satisfied = adverse.Count == 0 && (!entry.PositiveEvidence || favourable is not null);
-            var severity = adverse.Count > 0 ? adverse.Max(a => Weight(a.Severity)) : entry.Severity;
-            var text = adverse.Count > 0 ? adverse[0].Observation
-                : favourable?.Observation ?? entry.SatisfiedText;
+            // Nearly every rule names an adverse configuration, so showing it is the violation.
+            // The one positive-evidence rule inverts: showing it is what satisfies it.
+            var satisfied = entry.PositiveEvidence ? shows.Count > 0 : shows.Count == 0;
+            var severity = shows.Count > 0 ? shows.Max(a => Weight(a.Severity)) : entry.Severity;
+            var text = shows.Count > 0 ? shows[0].Observation
+                : rulesOut.FirstOrDefault()?.Observation ?? entry.SatisfiedText;
 
             outcomes.Add(new RuleOutcome(ruleId, principleSet, applicable, applicable && satisfied, severity, text));
         }

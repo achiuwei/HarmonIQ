@@ -18,7 +18,6 @@ public sealed class VastuTradition : ITradition
 {
     public string Id => PrincipleSets.Vastu;
     public string DisplayName => "Vastu Shastra";
-    public string Culture => "Indian";
     public int Order => 2;
     public string RulesVersion => "vastu-2.0";
     public bool RequiresOrientation => true;
@@ -123,7 +122,7 @@ public sealed class VastuTradition : ITradition
     }
 
     public string InterpretPrompt(string factSheet, string? orientationHint) =>
-        InterpretPromptBuilder.Build(DisplayName, Culture, Doctrine, factSheet, orientationHint);
+        InterpretPromptBuilder.Build(DisplayName, Doctrine, factSheet, orientationHint);
 
     private const string Doctrine = """
 Vastu Shastra reads a dwelling as a body laid over the Vastu Purusha Mandala — a directional grid in

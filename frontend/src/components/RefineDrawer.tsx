@@ -123,7 +123,7 @@ export function RefineDrawer({ listing, refinement, onApply, onClose }: RefineDr
           {(['all', ...TRADITIONS.map(t => t.id)] as Systems[]).map(s => (
             <button key={s} type="button" className={draft.systems === s ? 'on' : ''}
               onClick={() => setDraft(d => ({ ...d, systems: s }))}
-              title={s === 'all' ? 'Every tradition' : TRADITIONS.find(t => t.id === s)?.culture}>
+              title={s === 'all' ? 'Every tradition' : traditionLabel(s)}>
               {s === 'all' ? 'All' : traditionLabel(s)}
             </button>
           ))}

@@ -239,6 +239,9 @@ Other rules:
   you may decline: set notDeterminable to true, give a notDeterminableReason, and return empty
   findings and suggestions arrays. A forced tool call is allowed to come back empty.
 - Give every finding a confidence between 0 and 1 reflecting how clearly the drawing supports it.
+- Set `present` on every finding: true when the drawing SHOWS the configuration the ruleId names,
+  false when you checked and the drawing rules it out. Both are useful readings — report the ones
+  you can actually see either way, and do not leave `present` to be inferred from `severity`.
 - State your own coverage (0-1): how much of the rule catalogue this drawing actually let you evaluate.
 - Frame every tradition-based reading as belonging to that tradition, never as an objective claim
   about safety, health, or value. Never use negative superlatives — describe the configuration
@@ -263,9 +266,19 @@ Other rules:
                 @enum = new[] { "both", "fengshui", "vastu", "pungsu", "kaso", "phongthuy" },
             },
             confidence = new { type = "number", minimum = 0, maximum = 1 },
+            // Required, and the sole polarity signal. `severity` is optional and often omitted,
+            // so it grades magnitude only — it can never be what decides whether the drawing
+            // shows the configuration at all.
+            present = new
+            {
+                type = "boolean",
+                description =
+                    "True when the drawing SHOWS the configuration this ruleId names; false when "
+                    + "you looked and the drawing rules it out.",
+            },
             severity = new { type = "string", @enum = new[] { "minor", "moderate", "major" } },
         },
-        required = new[] { "ruleId", "principle", "observation", "tradition", "confidence" },
+        required = new[] { "ruleId", "principle", "observation", "tradition", "confidence", "present" },
     };
 
     /// <summary>

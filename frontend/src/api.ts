@@ -14,12 +14,12 @@ export type PrincipleSet = 'fengshui' | 'vastu' | 'pungsu' | 'kaso' | 'phongthuy
 export type Systems = 'all' | PrincipleSet;
 
 /** Display metadata for a tradition id. Unknown ids fall back to the title-cased id, sorted last. */
-export const TRADITIONS: ReadonlyArray<{ id: PrincipleSet; label: string; culture: string }> = [
-  { id: 'fengshui', label: 'Feng Shui', culture: 'Chinese' },
-  { id: 'vastu', label: 'Vastu Shastra', culture: 'Indian' },
-  { id: 'pungsu', label: 'Pungsu-jiri', culture: 'Korean' },
-  { id: 'kaso', label: 'Kasō', culture: 'Japanese' },
-  { id: 'phongthuy', label: 'Phong Thủy', culture: 'Vietnamese' },
+export const TRADITIONS: ReadonlyArray<{ id: PrincipleSet; label: string }> = [
+  { id: 'fengshui', label: 'Feng Shui' },
+  { id: 'vastu', label: 'Vastu Shastra' },
+  { id: 'pungsu', label: 'Pungsu-jiri' },
+  { id: 'kaso', label: 'Kasō' },
+  { id: 'phongthuy', label: 'Phong Thủy' },
 ];
 
 /** With no renter preference the surfaces show these two — today's visual weight, unchanged. */

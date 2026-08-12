@@ -23,9 +23,6 @@ public interface ITradition
     /// <summary>Renter-facing name, e.g. "Vastu Shastra".</summary>
     string DisplayName { get; }
 
-    /// <summary>Culture of origin, for the SRP filter's "Korea — Pungsu-jiri" labelling.</summary>
-    string Culture { get; }
-
     /// <summary>Display order across all surfaces. Never "highest score first" — that would rank traditions.</summary>
     int Order { get; }
 

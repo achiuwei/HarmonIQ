@@ -1,18 +1,19 @@
 {
-  "listingId": "sample",
-  "title": "The Elm — 2BR/2BA · Unit 414",
-  "address": "123 Main St, Arlington, VA 22201",
-  "url": "https://www.apartments.com/the-elm-arlington-va/sample/",
+  "listingId": "tk93cec",
+  "title": "108 Ambiance — 4BR/4BA",
+  "address": "108 Ambiance, Irvine, CA 92603",
+  "url": "https://www.apartments.com/108-ambiance-irvine-ca/tk93cec/",
   "photos": [
-    { "photoId": "p1", "file": "bedroom.jpg",  "caption": "Master Bedroom",    "interior": true,  "selected": true,  "suggestedRoomType": "Bedroom" },
-    { "photoId": "p2", "file": "living.jpg",   "caption": "Living Room",       "interior": true,  "selected": true,  "suggestedRoomType": "Living Room" },
-    { "photoId": "p3", "file": "kitchen.jpg",  "caption": "Chef's Kitchen",    "interior": true,  "selected": true,  "suggestedRoomType": "Kitchen" },
-    { "photoId": "p4", "file": "bathroom.jpg", "caption": "Primary Bath",      "interior": true,  "selected": true,  "suggestedRoomType": "Bathroom" },
-    { "photoId": "p5", "file": "office.jpg",   "caption": "Den / Home Office", "interior": true,  "selected": true,  "suggestedRoomType": "Home Office" },
-    { "photoId": "p6", "file": "exterior.jpg", "caption": "Building Exterior", "interior": false, "selected": false, "suggestedRoomType": null },
-    { "photoId": "p7", "file": "floorplan.jpg","caption": "Floor Plan",        "interior": false, "selected": false, "suggestedRoomType": null }
+    { "photoId": "p1", "file": "bedroom.jpg",   "caption": "Primary Bedroom",   "interior": true,  "selected": true,  "suggestedRoomType": "Bedroom" },
+    { "photoId": "p2", "file": "living.jpg",    "caption": "Living Room",       "interior": true,  "selected": true,  "suggestedRoomType": "Living Room" },
+    { "photoId": "p3", "file": "kitchen.jpg",   "caption": "Kitchen",           "interior": true,  "selected": true,  "suggestedRoomType": "Kitchen" },
+    { "photoId": "p4", "file": "bathroom.jpg",  "caption": "Primary Bath",      "interior": true,  "selected": true,  "suggestedRoomType": "Bathroom" },
+    { "photoId": "p5", "file": "office.jpg",    "caption": "Den / Home Office", "interior": true,  "selected": true,  "suggestedRoomType": "Home Office" },
+    { "photoId": "p6", "file": "dining.jpg",    "caption": "Dining Room",       "interior": true,  "selected": false, "suggestedRoomType": "Dining Room" },
+    { "photoId": "p7", "file": "exterior.jpg",  "caption": "Front Elevation",   "interior": false, "selected": false, "suggestedRoomType": null },
+    { "photoId": "p8", "file": "courtyard.jpg", "caption": "Courtyard",         "interior": false, "selected": false, "suggestedRoomType": null }
   ],
-  "numbers": { "unitNumber": "414", "floor": 4, "streetNumber": "123" },
+  "numbers": { "unitNumber": null, "floor": null, "streetNumber": "108" },
   "environment": {
     "north": { "road": "t-junction", "water": "none",    "structures": "open",            "slope": "level" },
     "east":  { "road": "none",       "water": "pond",    "structures": "open",            "slope": "falls" },

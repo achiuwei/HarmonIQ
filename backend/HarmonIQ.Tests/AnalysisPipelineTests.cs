@@ -122,8 +122,8 @@ public class AnalysisPipelineTests : IDisposable
 
     private static Subject PlanSubject(string rentalKey, bool imaged = true) => new()
     {
-        Id = $"sample-multiplan:{rentalKey}",
-        PropertyKey = "sample-multiplan",
+        Id = $"349246f:{rentalKey}",
+        PropertyKey = "349246f",
         SubjectType = "floorplan",
         ExternalPlanKey = rentalKey,
         PlanName = rentalKey,
@@ -186,7 +186,7 @@ public class AnalysisPipelineTests : IDisposable
     public async Task FloorPlanPath_WritesOneRowPerPrincipleSet_ForAnImagedPlan()
     {
         var (pipeline, db, store) = NewPipeline();
-        var (subject, inputSet) = await SeedAsync(db, "rk-101");
+        var (subject, inputSet) = await SeedAsync(db, "0xbkbx0");
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
@@ -196,11 +196,11 @@ public class AnalysisPipelineTests : IDisposable
             analyses.Select(a => a.PrincipleSet).Order());
         Assert.All(analyses, a => Assert.Equal("demo", a.Mode));
         Assert.All(analyses, a => Assert.Equal(Cohort.FloorPlan, a.CohortEvidencePath));
-        Assert.All(analyses, a => Assert.Equal("fp-sample-multiplan:rk-101-o", a.InputFingerprint));
+        Assert.All(analyses, a => Assert.Equal("fp-349246f:0xbkbx0-o", a.InputFingerprint));
 
         // Report bodies were written under the fixed key convention.
         Assert.Equal(PrincipleSets.All.Count, store.Items.Count);
-        Assert.Contains("reports/e1/sample-multiplan:rk-101/fengshui.json.gz", store.Items.Keys);
+        Assert.Contains("reports/e1/349246f:0xbkbx0/fengshui.json.gz", store.Items.Keys);
         Assert.All(analyses, a => Assert.False(string.IsNullOrWhiteSpace(a.ReportSha256)));
 
         // ONE tradition-agnostic observation serves BOTH sets.
@@ -213,8 +213,8 @@ public class AnalysisPipelineTests : IDisposable
     {
         var (pipeline, db, _) = NewPipeline();
 
-        var without = PlanSubject("rk-101");
-        var withOne = PlanSubject("rk-103");
+        var without = PlanSubject("0xbkbx0");
+        var withOne = PlanSubject("1n992v6");
         db.Subjects.AddRange(without, withOne);
         var withoutSet = PlanInputSet(without, withOrientation: false);
         var withSet = PlanInputSet(withOne, withOrientation: true);
@@ -241,7 +241,7 @@ public class AnalysisPipelineTests : IDisposable
     public async Task PlanWithNoImage_IsNotScoredAtAll()
     {
         var (pipeline, db, store) = NewPipeline();
-        var (subject, inputSet) = await SeedAsync(db, "rk-105", imaged: false);
+        var (subject, inputSet) = await SeedAsync(db, "ry5b9z1", imaged: false);
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
@@ -264,7 +264,7 @@ public class AnalysisPipelineTests : IDisposable
             Coverage: 0);
 
         var (pipeline, db, _) = NewPipeline(new StubLens(declined));
-        var (subject, inputSet) = await SeedAsync(db, "rk-102");
+        var (subject, inputSet) = await SeedAsync(db, "gch7mgw");
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
@@ -287,7 +287,7 @@ public class AnalysisPipelineTests : IDisposable
             [], 0.85));
 
         var (pipeline, db, _) = NewPipeline(lens);
-        var (subject, inputSet) = await SeedAsync(db, "rk-104");
+        var (subject, inputSet) = await SeedAsync(db, "bmgrv28");
 
         await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
         Assert.Equal(1, await db.Observations.CountAsync());
@@ -310,7 +310,7 @@ public class AnalysisPipelineTests : IDisposable
             [], 0.9));
 
         var (pipeline, db, _) = NewPipeline(lens);
-        var (subject, inputSet) = await SeedAsync(db, "rk-103");
+        var (subject, inputSet) = await SeedAsync(db, "1n992v6");
 
         await pipeline.RunAsync(subject, inputSet, Engine("e1"), live: false, default);
         var before = await db.Analyses.AsNoTracking().ToListAsync();
@@ -344,7 +344,7 @@ public class AnalysisPipelineTests : IDisposable
     public async Task ElementBalanceJson_IsNullOnEveryRowOfTheFloorPlanPath()
     {
         var (pipeline, db, _) = NewPipeline();
-        var (subject, inputSet) = await SeedAsync(db, "rk-101");
+        var (subject, inputSet) = await SeedAsync(db, "0xbkbx0");
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
@@ -360,8 +360,8 @@ public class AnalysisPipelineTests : IDisposable
 
         var subject = new Subject
         {
-            Id = "sample",
-            PropertyKey = "sample",
+            Id = "tk93cec",
+            PropertyKey = "tk93cec",
             SubjectType = "property",
             CreatedAt = DateTimeOffset.UtcNow,
             LastSeenAt = DateTimeOffset.UtcNow,
@@ -379,7 +379,7 @@ public class AnalysisPipelineTests : IDisposable
             EnvironmentJson = JsonSerializer.Serialize(KnownEnvironment, Json.Options),
             OrientationJson = JsonSerializer.Serialize(new
             {
-                subjectId = "sample", facingDegrees = 0.0, cardinal = "north",
+                subjectId = "tk93cec", facingDegrees = 0.0, cardinal = "north",
                 source = "annotation", confidence = 0.8, resolvedAt = DateTimeOffset.UtcNow,
             }, Json.Options),
             NumbersJson = JsonSerializer.Serialize(new ListingNumbers("404", 4, "900"), Json.Options),
@@ -412,7 +412,7 @@ public class AnalysisPipelineTests : IDisposable
     {
         var throwing = new ThrowingLens();
         var (pipeline, db, _) = NewPipeline(throwing);
-        var (subject, inputSet) = await SeedAsync(db, "rk-101");
+        var (subject, inputSet) = await SeedAsync(db, "0xbkbx0");
 
         var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
@@ -436,7 +436,7 @@ public class AnalysisPipelineTests : IDisposable
         var (pipeline, db, _) = NewPipeline();
 
         var scores = new List<int?>();
-        foreach (var key in new[] { "rk-101", "rk-102", "rk-103", "rk-104" })
+        foreach (var key in new[] { "0xbkbx0", "gch7mgw", "1n992v6", "bmgrv28" })
         {
             var (subject, inputSet) = await SeedAsync(db, key);
             var analyses = await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
@@ -451,7 +451,7 @@ public class AnalysisPipelineTests : IDisposable
     public async Task ReportBody_RoundTrips_AndOmitsElementBalanceOnThePlanPath()
     {
         var (pipeline, db, store) = NewPipeline();
-        var (subject, inputSet) = await SeedAsync(db, "rk-101");
+        var (subject, inputSet) = await SeedAsync(db, "0xbkbx0");
         await pipeline.RunAsync(subject, inputSet, Engine(), live: false, default);
 
         var writer = new ReportBodyWriter(store);
@@ -476,6 +476,60 @@ public class AnalysisPipelineTests : IDisposable
         {
             Assert.DoesNotContain(banned, text, StringComparison.OrdinalIgnoreCase);
         }
+    }
+
+    private static LensResult PlanLensFor(string principleSet, params LensFinding[] findings)
+    {
+        var plan = new FloorPlanObservation(false, null, true, [.. findings], [], 1.0);
+        var input = new DerivationInput(
+            Cohort.FloorPlan, [ObservationPayload.ForPlan(plan)],
+            ListingEnvironment.AllUnknown, null,
+            new Dictionary<string, NumerologyResult>(), Calibration.Identity);
+        return AnalysisDerivation.InteriorsLens(principleSet, input)!;
+    }
+
+    /// <summary>
+    /// Severity is optional in the lens schema, and live reads routinely omit it while still
+    /// describing the adverse configuration in prose. Polarity keyed on "severity is present"
+    /// therefore read every real violation as a pass — which is how twenty different floor plans
+    /// all scored exactly 100/A+.
+    /// </summary>
+    [Fact]
+    public void PlanLens_CountsAConfigurationTheDrawingShowsAsUnsatisfiedEvenWithNoSeverity()
+    {
+        var lens = PlanLensFor(
+            PrincipleSets.FengShui,
+            new LensFinding(
+                FloorPlanRules.BathAdjacentKitchen, "Water Room Beside the Cooking Zone",
+                "The bathroom shares a wall directly with the kitchen counter run.",
+                "fengshui", 0.7, Severity: null, Present: true));
+
+        Assert.False(lens.Outcomes.Single(o => o.RuleId == FloorPlanRules.BathAdjacentKitchen).Satisfied);
+    }
+
+    [Fact]
+    public void PlanLens_CountsAConfigurationTheDrawingRulesOutAsSatisfied()
+    {
+        var lens = PlanLensFor(
+            PrincipleSets.FengShui,
+            new LensFinding(
+                FloorPlanRules.BathDoorOntoDining, "Water Room Door onto the Eating Place",
+                "The bathroom door opens away from the dining area.",
+                "fengshui", 0.7, Severity: null, Present: false));
+
+        Assert.True(lens.Outcomes.Single(o => o.RuleId == FloorPlanRules.BathDoorOntoDining).Satisfied);
+    }
+
+    [Fact]
+    public void PlanLens_StillTreatsAScoredSeverityAsTheConfigurationBeingPresent()
+    {
+        var lens = PlanLensFor(
+            PrincipleSets.FengShui,
+            new LensFinding(
+                FloorPlanRules.EntryToRearStraightLine, "Entry to Rear Sightline",
+                "The entry lines up with the rear window.", "fengshui", 0.9, "major"));
+
+        Assert.False(lens.Outcomes.Single(o => o.RuleId == FloorPlanRules.EntryToRearStraightLine).Satisfied);
     }
 
     [Fact]
@@ -538,17 +592,36 @@ public class AnalysisPipelineTests : IDisposable
         Assert.False(centre.Satisfied);
     }
 
+    /// <summary>
+    /// Ingestion writes the plan path's evidence as a bare hash array. A hash alone cannot locate
+    /// bytes, and the "no evidence listed" fallback that knows the image path only fires when the
+    /// list is EMPTY — so a one-hash list produced a ref with no source, and live perception threw
+    /// "No plan image bytes" for every plan. Same shape of defect as the photoId-less photo hashes.
+    /// </summary>
+    [Fact]
+    public void EvidenceManifest_ResolvesAPlanSourceFromTheSubjectWhenTheSnapshotCarriesOnlyAHash()
+    {
+        var subject = PlanSubject("0xbkbx0");
+        var inputSet = PlanInputSet(subject, withOrientation: true);
+        inputSet.EvidenceHashesJson = JsonSerializer.Serialize(new[] { subject.PlanImageHash }, Json.Options);
+
+        var single = Assert.Single(EvidenceManifest.Parse(subject, inputSet));
+
+        Assert.Equal("phash-0xbkbx0", single.Hash);
+        Assert.Equal("sample-plans/plan-0xbkbx0.png", single.Source);
+    }
+
     [Fact]
     public void EvidenceManifest_TreatsAnImagelessPlanAsNoEvidence()
     {
-        var imageless = PlanSubject("rk-105", imaged: false);
+        var imageless = PlanSubject("ry5b9z1", imaged: false);
         var inputSet = PlanInputSet(imageless, withOrientation: true);
         Assert.Empty(EvidenceManifest.Parse(imageless, inputSet));
 
-        var imaged = PlanSubject("rk-101");
+        var imaged = PlanSubject("0xbkbx0");
         var refs = EvidenceManifest.Parse(imaged, PlanInputSet(imaged, withOrientation: true));
         var single = Assert.Single(refs);
         Assert.Equal(EvidenceRef.Plan, single.Kind);
-        Assert.Equal("phash-rk-101", single.Hash);
+        Assert.Equal("phash-0xbkbx0", single.Hash);
     }
 }

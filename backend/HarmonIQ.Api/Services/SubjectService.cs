@@ -26,7 +26,7 @@ public interface IPlanImageLoader
 
 /// <summary>
 /// Local/offline implementation: resolves a relative plan-image path against the API's
-/// <c>Data</c> directory (e.g. <c>sample-plans/plan-rk-101.png</c>). Absolute (remote) URLs
+/// <c>Data</c> directory (e.g. <c>sample-plans/plan-0xbkbx0.png</c>). Absolute (remote) URLs
 /// return <c>null</c> rather than making a network call — no network for fixtures locally.
 /// </summary>
 public class FilePlanImageLoader(IWebHostEnvironment env) : IPlanImageLoader
@@ -210,8 +210,14 @@ public class SubjectService(
         {
             // Listing photos are never attached to a plan subject's input set (design §5) — they
             // are property-level marketing shots, not this plan's interior.
-            var hashes = subject.PlanImageHash is null ? Array.Empty<string>() : new[] { subject.PlanImageHash };
-            evidenceHashesJson = JsonSerializer.Serialize(hashes, Json.Options);
+            //
+            // The source travels with the hash, exactly as the photo path carries its photoId: a
+            // hash identifies evidence for fingerprinting but cannot locate its bytes, and live
+            // perception needs the drawing itself.
+            var plan = subject.PlanImageHash is null
+                ? Array.Empty<object>()
+                : [new { hash = subject.PlanImageHash, kind = "plan", label = subject.ExternalPlanKey, source = subject.PlanImageUrl }];
+            evidenceHashesJson = JsonSerializer.Serialize(plan, Json.Options);
             numbersJson = await ResolveFloorPlanUnitNumbersJsonAsync(subject, ct);
         }
         else
@@ -321,13 +327,33 @@ public class SubjectService(
         // Environment snapshots are pinned with a re-resolve cadence: existing grades must not
         // drift under a frozen engine when OSM/geo data changes. Reuse the prior snapshot's
         // environment verbatim while it's within the TTL; only re-resolve once it's stale.
-        if (prior is not null && (now - prior.CreatedAt).TotalDays < ttlDays)
+        // An all-unknown snapshot is a failed lookup, not a reading, and no grade was ever pinned
+        // to it — so it is re-resolved rather than frozen for the rest of the TTL.
+        if (prior is not null && (now - prior.CreatedAt).TotalDays < ttlDays && !IsAllUnknown(prior.EnvironmentJson))
         {
             return prior.EnvironmentJson;
         }
 
         var env = await listingService.GetPropertyEnvironmentAsync(subject.PropertyKey, ct) ?? ListingEnvironment.AllUnknown;
         return JsonSerializer.Serialize(env, Json.Options);
+    }
+
+    /// <summary>
+    /// Whether a stored environment says nothing on any side. Unparseable JSON is deliberately
+    /// not "unknown" — an older or hand-written snapshot shape is left pinned rather than silently
+    /// re-resolved out from under whatever was graded on it.
+    /// </summary>
+    private static bool IsAllUnknown(string environmentJson)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ListingEnvironment>(environmentJson, Json.Options)
+                == ListingEnvironment.AllUnknown;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private async Task<string?> ResolveOrientationJsonAsync(Subject subject, CancellationToken ct)

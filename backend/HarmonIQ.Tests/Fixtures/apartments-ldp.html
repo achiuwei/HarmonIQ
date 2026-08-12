@@ -1,0 +1,332 @@
+<!--
+  Real apartments.com LDP markup, captured 2026-08-11 from
+  https://www.apartments.com/enzo-irvine-ca/349246f/ (the Enzo demo fixture property).
+
+  This is deliberately NOT the same shape as multiplan-ldp.html, which is the mock LDP's own
+  markup. Three differences drive the scraper's second parsing path:
+
+    1. The plan block is div.pricingGridItem, not div.plan-card. Identity lives on a nested
+       div.priceGridModelWrapper[data-rentalkey], and the model name on a further nested
+       div.floorplanButton[data-modelname].
+    2. Beds/baths/sqft are bare <span>s inside .detailsTextWrapper — there is no class="beds",
+       class="baths" or class="sqft" anywhere on a real page.
+    3. Unit rows are <li class="unitContainer"> carrying data-unit, not <tr class="unit-row">,
+       and they have NO floor number: apartments.com does not publish one.
+
+  Trimmed only by collapsing runs of whitespace and dropping per-unit marketing sub-blocks that
+  carry no scrapable field. Every element, class and attribute the scraper reads is verbatim.
+
+  Contents: Willow (sqft range, 6 units of which 3 sit behind "Show More Units"), then Sandpiper
+  (a studio with no available units), then Sandpiper AGAIN — a real page renders every plan once
+  per bedroom-count tab, so the same rentalKey legitimately appears more than once and the scraper
+  must fold the repeats.
+-->
+<html>
+<body>
+<section class="availabilitySection">
+<div class="tab-section active" data-tab-content-id="all">
+
+<div class="pricingGridItem multiFamily hasUnitGrid v3 UnitLevel_var2">
+<div class="priceGridModelWrapper js-unitContainer mortar-wrapper " data-rentalkey="bmgrv28">
+<div class="row">
+<div class="column1">
+<div data-attachmentid="-1" data-rentalkey="bmgrv28" data-rentaltype="1" data-modelname="Willow" data-unitkey="" class="floorplanButton js-viewModelDetails-modal">
+<div class="lazy floorPlanButtonImage" data-attachmentid="-1" data-modelname="Willow" data-rentalkey="bmgrv28" data-rentaltype="1" data-background-image="https://images1.apartments.com/i2/hCEE9Cttm59TktIwsLrzLVcupTqAjLXe0VV_BF0pDYo/115/image.png?p=1">
+</div>
+</div>
+</div>
+<div class="column2">
+<div class="priceBedRangeInfo">
+<div class="unitLabel">
+<span class="modelLabel ">
+<span class="modelName">Willow</span>
+</span>
+</div>
+<span class="rentLabel">
+Starting at $4,235
+<span class="all-in-pricing-text ellipsis">
+<i class="storyicon checkmarkStoryIcon" aria-hidden="true"></i><span class="placardMonthlyFeesIncluded">Total Monthly Price</span>
+</span>
+</span>
+<span class="detailsLabel">
+<span class="detailsTextWrapper">
+<span>2 Beds</span>
+<span>2 Baths</span>
+<span>1,020 – 1,103 Sq Ft</span>
+</span>
+</span>
+<div class="actionLinksContainer">
+<button data-rentalkey="bmgrv28" data-rentaltype="1" data-modelname="Willow" class="actionLinks js-viewModelDetails-modal">Floor Plan Details</button>
+<button class="has-integrated-schedule-tour tourFloorplan onlineScheduling js-tourFloorplan actionLinks" data-modelkey="bmgrv28" data-mockedmodel="0">Tour Floor Plan</button>
+</div>
+</div>
+</div>
+</div>
+<div class="availability">6 Available units</div>
+</div>
+<div class="unitGridContainer mortar-wrapper ">
+<div>
+<div class="unitGridHeaderRow grid-container">
+<div class="unitLabel unitColumn">
+Unit
+</div>
+<div class="unitLabel pricingColumn">
+Total Price </div>
+<div class="unitLabel sqftColumn">
+Sq Ft
+</div>
+<div class="unitLabel availableColumn">
+Availability
+</div>
+<div class="unitLabel unitDetailsColumn">
+Unit Details
+</div>
+</div>
+<ul class="">
+<li class="unitContainer js-unitContainerV3 " data-unitmapid="1" data-photocount="0" data-videocount="0" data-floorplancount="0" data-virtualtourcount="0" data-maxrent="4215" data-rentaltype="2" data-rentalkey="rzpxqk1" data-beds="2" data-baths="2" data-model="Willow" data-unit="3356" data-unitkey="rzpxqk1" data-modelkey="bmgrv28" data-collapsed="" data-description="" data-monetaryunittype="USD" data-showrentestimate="1" data-hasspecialtypropertydisclaimer="-1">
+<div class="grid-container js-unitExtension">
+<div class="unitColumn column">
+<span title="3356" class=" js-viewUnitDetails-modal">3356</span>
+</div>
+<div class="pricingColumn column">
+<span>
+$4,250
+</span>
+</div>
+<div class="sqftColumn column">
+<span>
+1,020
+</span>
+</div>
+<div class="availableColumn column">
+<div class="availableColumnInnerContainer">
+<span class="dateAvailable">
+Now
+</span>
+</div>
+</div>
+</div>
+<div class="unitDetails">
+</div>
+</li>
+<li class="unitContainer js-unitContainerV3 " data-unitmapid="1" data-photocount="0" data-videocount="0" data-floorplancount="0" data-virtualtourcount="0" data-maxrent="4245" data-rentaltype="2" data-rentalkey="db09k5k" data-beds="2" data-baths="2" data-model="Willow" data-unit="3156" data-unitkey="db09k5k" data-modelkey="bmgrv28" data-collapsed="" data-description="" data-monetaryunittype="USD" data-showrentestimate="1" data-hasspecialtypropertydisclaimer="-1">
+<div class="grid-container js-unitExtension">
+<div class="unitColumn column">
+<span title="3156" class=" js-viewUnitDetails-modal">3156</span>
+</div>
+<div class="pricingColumn column">
+<span>
+$4,280
+</span>
+</div>
+<div class="sqftColumn column">
+<span>
+1,020
+</span>
+</div>
+<div class="availableColumn column">
+<div class="availableColumnInnerContainer">
+<span class="dateAvailable">
+Aug 17
+</span>
+</div>
+</div>
+</div>
+<div class="unitDetails">
+</div>
+</li>
+<li class="unitContainer js-unitContainerV3 " data-unitmapid="1" data-photocount="0" data-videocount="0" data-floorplancount="0" data-virtualtourcount="0" data-maxrent="4255" data-rentaltype="2" data-rentalkey="e4e78pm" data-beds="2" data-baths="2" data-model="Willow" data-unit="3466" data-unitkey="e4e78pm" data-modelkey="bmgrv28" data-collapsed="" data-description="" data-monetaryunittype="USD" data-showrentestimate="1" data-hasspecialtypropertydisclaimer="-1">
+<div class="grid-container js-unitExtension">
+<div class="unitColumn column">
+<span title="3466" class=" js-viewUnitDetails-modal">3466</span>
+</div>
+<div class="pricingColumn column">
+<span>
+$4,290
+</span>
+</div>
+<div class="sqftColumn column">
+<span>
+1,103
+</span>
+</div>
+<div class="availableColumn column">
+<div class="availableColumnInnerContainer">
+<span class="dateAvailable">
+Aug 17
+</span>
+</div>
+</div>
+</div>
+<div class="unitDetails">
+</div>
+</li>
+<li class="unitContainer js-unitContainerV3 hideOnCollapsed " data-unitmapid="1" data-photocount="0" data-videocount="0" data-floorplancount="0" data-virtualtourcount="0" data-maxrent="4315" data-rentaltype="2" data-rentalkey="cwe1rmd" data-beds="2" data-baths="2" data-model="Willow" data-unit="3566" data-unitkey="cwe1rmd" data-modelkey="bmgrv28" data-collapsed="hideOnCollapsed" data-description="" data-monetaryunittype="USD" data-showrentestimate="1" data-hasspecialtypropertydisclaimer="-1">
+<div class="grid-container js-unitExtension">
+<div class="unitColumn column">
+<span title="3566" class=" js-viewUnitDetails-modal">3566</span>
+</div>
+<div class="pricingColumn column">
+<span>
+$4,350
+</span>
+</div>
+<div class="sqftColumn column">
+<span>
+1,103
+</span>
+</div>
+<div class="availableColumn column">
+<div class="availableColumnInnerContainer">
+<span class="dateAvailable">
+Aug 24
+</span>
+</div>
+</div>
+</div>
+<div class="unitDetails">
+</div>
+</li>
+<li class="unitContainer js-unitContainerV3 hideOnCollapsed " data-unitmapid="1" data-photocount="0" data-videocount="0" data-floorplancount="0" data-virtualtourcount="0" data-maxrent="4285" data-rentaltype="2" data-rentalkey="e6lky3q" data-beds="2" data-baths="2" data-model="Willow" data-unit="3409" data-unitkey="e6lky3q" data-modelkey="bmgrv28" data-collapsed="hideOnCollapsed" data-description="" data-monetaryunittype="USD" data-showrentestimate="1" data-hasspecialtypropertydisclaimer="-1">
+<div class="grid-container js-unitExtension">
+<div class="unitColumn column">
+<span title="3409" class=" js-viewUnitDetails-modal">3409</span>
+</div>
+<div class="pricingColumn column">
+<span>
+$4,320
+</span>
+</div>
+<div class="sqftColumn column">
+<span>
+1,020
+</span>
+</div>
+<div class="availableColumn column">
+<div class="availableColumnInnerContainer">
+<span class="dateAvailable">
+Aug 31
+</span>
+</div>
+</div>
+</div>
+<div class="unitDetails">
+</div>
+</li>
+<li class="unitContainer js-unitContainerV3 hideOnCollapsed " data-unitmapid="1" data-photocount="0" data-videocount="0" data-floorplancount="0" data-virtualtourcount="0" data-maxrent="4200" data-rentaltype="2" data-rentalkey="df6w20l" data-beds="2" data-baths="2" data-model="Willow" data-unit="3166" data-unitkey="df6w20l" data-modelkey="bmgrv28" data-collapsed="hideOnCollapsed" data-description="" data-monetaryunittype="USD" data-showrentestimate="1" data-hasspecialtypropertydisclaimer="-1">
+<div class="grid-container js-unitExtension">
+<div class="unitColumn column">
+<span title="3166" class=" js-viewUnitDetails-modal">3166</span>
+</div>
+<div class="pricingColumn column">
+<span>
+$4,235
+</span>
+</div>
+<div class="sqftColumn column">
+<span>
+1,103
+</span>
+</div>
+<div class="availableColumn column">
+<div class="availableColumnInnerContainer">
+<span class="dateAvailable">
+Sep 7
+</span>
+</div>
+</div>
+</div>
+<div class="unitDetails">
+</div>
+</li>
+</ul>
+<p class="showMoreLabel">
+<button class="js-priceGridShowMoreLabel" aria-expanded="false" data-model="Willow" data-button-expanded-name="Show Less" data-button-collapse-name="Show More Units (3)">
+Show More Units (3)
+</button>
+</p>
+</div>
+</div>
+</div>
+
+<div class="pricingGridItem multiFamily v3 UnitLevel_var2">
+<div class="priceGridModelWrapper js-unitContainer mortar-wrapper " data-rentalkey="bncrtt8">
+<div class="row">
+<div class="column1">
+<div data-attachmentid="-1" data-rentalkey="bncrtt8" data-rentaltype="1" data-modelname="Sandpiper" data-unitkey="" class="floorplanButton js-viewModelDetails-modal">
+<div class="lazy floorPlanButtonImage" data-attachmentid="-1" data-modelname="Sandpiper" data-rentalkey="bncrtt8" data-rentaltype="1" data-background-image="https://images1.apartments.com/i2/3TCLjkLn4zGASU8ptkBZJ_1Kelbu54s5cd6PQgy2wT4/115/image.png?p=1">
+</div>
+</div>
+</div>
+<div class="column2">
+<div class="priceBedRangeInfo">
+<div class="unitLabel">
+<span class="modelLabel hasAvailInfo">
+<span class="modelName">Sandpiper</span>
+</span>
+</div>
+<span class="rentLabel">
+Call for Rent
+</span>
+<span class="detailsLabel">
+<span class="detailsTextWrapper">
+<span>Studio</span>
+<span>1 Bath</span>
+<span>552 Sq Ft</span>
+</span>
+</span>
+<div class="actionLinksContainer">
+<button data-rentalkey="bncrtt8" data-rentaltype="1" data-modelname="Sandpiper" class="actionLinks js-viewModelDetails-modal"><span class="screenReaderOnly">View Sandpiper </span>Floor Plan Details</button>
+<button class="has-integrated-schedule-tour tourFloorplan onlineScheduling js-tourFloorplan actionLinks" data-modelkey="bncrtt8" data-mockedmodel="0">Tour Floor Plan</button>
+</div>
+<span class="availabilityInfo">Not Available</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="tab-section" data-tab-content-id="bed0">
+
+<div class="pricingGridItem multiFamily v3 UnitLevel_var2">
+<div class="priceGridModelWrapper js-unitContainer mortar-wrapper " data-rentalkey="bncrtt8">
+<div class="row">
+<div class="column1">
+<div data-attachmentid="-1" data-rentalkey="bncrtt8" data-rentaltype="1" data-modelname="Sandpiper" data-unitkey="" class="floorplanButton js-viewModelDetails-modal">
+<div class="lazy floorPlanButtonImage" data-attachmentid="-1" data-modelname="Sandpiper" data-rentalkey="bncrtt8" data-rentaltype="1" data-background-image="https://images1.apartments.com/i2/3TCLjkLn4zGASU8ptkBZJ_1Kelbu54s5cd6PQgy2wT4/115/image.png?p=1">
+</div>
+</div>
+</div>
+<div class="column2">
+<div class="priceBedRangeInfo">
+<div class="unitLabel">
+<span class="modelLabel hasAvailInfo">
+<span class="modelName">Sandpiper</span>
+</span>
+</div>
+<span class="rentLabel">
+Call for Rent
+</span>
+<span class="detailsLabel">
+<span class="detailsTextWrapper">
+<span>Studio</span>
+<span>1 Bath</span>
+<span>552 Sq Ft</span>
+</span>
+</span>
+<div class="actionLinksContainer">
+<button data-rentalkey="bncrtt8" data-rentaltype="1" data-modelname="Sandpiper" class="actionLinks js-viewModelDetails-modal"><span class="screenReaderOnly">View Sandpiper </span>Floor Plan Details</button>
+<button class="has-integrated-schedule-tour tourFloorplan onlineScheduling js-tourFloorplan actionLinks" data-modelkey="bncrtt8" data-mockedmodel="0">Tour Floor Plan</button>
+</div>
+<span class="availabilityInfo">Not Available</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</body>
+</html>

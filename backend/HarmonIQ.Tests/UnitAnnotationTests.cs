@@ -6,8 +6,11 @@ namespace HarmonIQ.Tests;
 /// <summary>
 /// <see cref="NumerologyService.EvaluateUnits"/> is the read-time, never-persisted path
 /// (design Q1 / SPEC v2 FR-17..20). These tests assert purity — no DbContext, no
-/// randomness, no grade field anywhere on the output — using the multi-plan fixture's
-/// seeded unit numbers (444, 113, 888, 1444; see Data/sample-multiplan-listing.json).
+/// randomness, no grade field anywhere on the output.
+///
+/// The unit numbers below are chosen to exercise the numerology rules (tetraphobia, the Western
+/// 13, the 8-as-wealth reading), not copied from any fixture — this test owns its inputs so that
+/// re-pointing the demo fixtures at a different property cannot silently change what it covers.
 /// </summary>
 public class UnitAnnotationTests
 {
@@ -17,10 +20,10 @@ public class UnitAnnotationTests
 
     private static readonly IReadOnlyList<ScrapedUnit> FixtureUnits =
     [
-        new ScrapedUnit("444", 4, 700, 2100m),   // rk-101
-        new ScrapedUnit("113", 1, 650, 1900m),   // rk-102 — triggers Western 13
-        new ScrapedUnit("888", 8, 900, 2600m),   // rk-103
-        new ScrapedUnit("1444", 14, 950, 2800m), // rk-104
+        new ScrapedUnit("444", 4, 700, 2100m),   // tetraphobia
+        new ScrapedUnit("113", 1, 650, 1900m),   // triggers Western 13
+        new ScrapedUnit("888", 8, 900, 2600m),   // 8 as wealth
+        new ScrapedUnit("1444", 14, 950, 2800m), // 14 plus repeated 4
     ];
 
     [Fact]

@@ -29,6 +29,16 @@ builder.Services.AddCors();
 // being registered by someone, and no v2 module claims that v1 surface. Remove once the
 // v1 AnalysisController is retired (Task 11) and nothing needs them.
 builder.Services.AddHttpClient();
+// The listing scraper's own client: identical to the default except that it accepts a
+// self-signed certificate on loopback, so `Listing:BaseUrl` can point at a locally-served LDP.
+// Public hosts still get full validation — see ListingSource.AllowsDevCertificate.
+builder.Services.AddHttpClient(ListingService.HttpClientName)
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
+            errors == System.Net.Security.SslPolicyErrors.None
+            || (request.RequestUri is { } uri && ListingSource.AllowsDevCertificate(uri)),
+    });
 builder.Services.AddSingleton<SampleListingProvider>();
 builder.Services.AddSingleton<IListingService, ListingService>();
 builder.Services.AddSingleton<IGeoContextService, GeoContextService>();
@@ -92,7 +102,7 @@ app.MapGet("/api/debug/geo", (
         string address,
         [Microsoft.AspNetCore.Mvc.FromServices] HarmonIQ.Api.Services.IGeoContextService geo,
         CancellationToken ct) =>
-    geo.GetEnvironmentAsync($"debug:{address}", address, ct));
+    geo.GetEnvironmentAsync($"debug:{address}", address, point: null, ct));
 
 app.UseDefaultFiles(new DefaultFilesOptions { DefaultFileNames = { "mock-ldp.html" } });
 app.UseStaticFiles();
@@ -129,6 +139,9 @@ static Dictionary<string, string?> EnvOverrides()
     var map = new Dictionary<string, string> {
         ["CLAUDE_API_KEY"] = "Claude:ApiKey", ["CLAUDE_BASE_URL"] = "Claude:BaseUrl",
         ["CLAUDE_MODEL"] = "Claude:Model", ["LISTING_SOURCE"] = "Listing:Source",
+        // Repoints the scraper at a locally-served LDP; the production site 403s an automated client.
+        ["LISTING_BASE_URL"] = "Listing:BaseUrl", ["LISTING_PATH_TEMPLATE"] = "Listing:PathTemplate",
+        ["LISTING_TIMEOUT_SECONDS"] = "Listing:TimeoutSeconds",
         ["GEO_GEOCODER_URL"] = "Geo:GeocoderUrl", ["GEO_OVERPASS_URL"] = "Geo:OverpassUrl",
         ["GEO_ELEVATION_URL"] = "Geo:ElevationUrl", ["GEO_SNAPSHOT_TTL_DAYS"] = "Geo:SnapshotTtlDays",
         // v2 (Task 10) — persistence paths read as flat keys by PersistenceModule /

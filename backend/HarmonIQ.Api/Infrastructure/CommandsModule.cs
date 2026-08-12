@@ -20,5 +20,6 @@ public class CommandsModule : IServiceModule
         services.AddScoped<IScoringDriver, InteractiveScoringDriver>();
         services.AddSingleton<IBatchScoringClient, StubBatchScoringClient>();
         services.AddSingleton<IHarmonIQCommand, BackfillCommand>();
+        services.AddSingleton<IHarmonIQCommand, ExportFixtureCommand>();
     }
 }

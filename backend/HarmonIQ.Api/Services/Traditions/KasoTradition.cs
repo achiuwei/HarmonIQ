@@ -20,7 +20,6 @@ public sealed class KasoTradition : ITradition
 {
     public string Id => PrincipleSets.Kaso;
     public string DisplayName => "Kasō";
-    public string Culture => "Japanese";
     public int Order => 4;
     public string RulesVersion => "kaso-1.0";
     public bool RequiresOrientation => true;
@@ -134,7 +133,7 @@ public sealed class KasoTradition : ITradition
     }
 
     public string InterpretPrompt(string factSheet, string? orientationHint) =>
-        InterpretPromptBuilder.Build(DisplayName, Culture, Doctrine, factSheet, orientationHint);
+        InterpretPromptBuilder.Build(DisplayName, Doctrine, factSheet, orientationHint);
 
     private const string Doctrine = """
 Kasō (家相) judges a dwelling by the placement of its functions against an absolute compass grid. It

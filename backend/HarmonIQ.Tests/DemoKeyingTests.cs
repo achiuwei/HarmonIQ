@@ -14,11 +14,11 @@ public class DemoKeyingTests
 {
     private static readonly string[] FixturePlanSubjects =
     [
-        "sample-multiplan:rk-101",
-        "sample-multiplan:rk-102",
-        "sample-multiplan:rk-103",
-        "sample-multiplan:rk-104",
-        "sample-multiplan:rk-105",
+        "349246f:0xbkbx0",
+        "349246f:gch7mgw",
+        "349246f:1n992v6",
+        "349246f:bmgrv28",
+        "349246f:ry5b9z1",
     ];
 
     private static MockAnalysisService NewService() => new(AppContext.BaseDirectory);
@@ -40,7 +40,7 @@ public class DemoKeyingTests
         }
 
         // A literal pin: a per-process randomized hash could not satisfy this across runs.
-        Assert.Equal(ExpectedKey("sample-multiplan:rk-101"), MockAnalysisService.DemoKey("sample-multiplan:rk-101"));
+        Assert.Equal(ExpectedKey("349246f:0xbkbx0"), MockAnalysisService.DemoKey("349246f:0xbkbx0"));
         Assert.Equal(-2, MockAnalysisService.DemoJitter("photo-4"));
     }
 

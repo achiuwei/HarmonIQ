@@ -16,7 +16,7 @@ using Orientation = HarmonIQ.Api.Services.Orientation;
 namespace HarmonIQ.Tests;
 
 /// <summary>
-/// The v2 API surface against the real <c>sample-multiplan</c> fixture, on SQLite, in demo mode
+/// The v2 API surface against the real Enzo fixture (<c>349246f</c>), on SQLite, in demo mode
 /// (no CLAUDE_API_KEY exists on the verification machine and none is needed).
 ///
 /// The controllers are constructed directly rather than through <c>WebApplicationFactory</c>:
@@ -27,8 +27,27 @@ namespace HarmonIQ.Tests;
 /// </summary>
 public class ApiContractTests : IDisposable
 {
-    private const string MultiPlan = "sample-multiplan";
-    private const string ImagelessPlanKey = "rk-105";
+    private const string MultiPlan = "349246f";
+
+    /// <summary>
+    /// A scored plan that resolves a facing (it is in <c>sample-orientation.json</c>), so the
+    /// with-orientation path is exercised.
+    /// </summary>
+    private const string ScoredPlanKey = "0xbkbx0";      // "Crane", 9 units
+    private const string ScoredUnitNumber = "3350";
+
+    /// <summary>A plan absent from the orientation fixture, so Vastu stays gated off.</summary>
+    private const string UnorientedPlanKey = "ry5b9z1";  // "Olive", 6 units
+
+    /// <summary>
+    /// The plan whose image <see cref="ImagelessPlanSource"/> strips.
+    ///
+    /// Every real Enzo plan carries an image, so unlike the old invented fixture there is no
+    /// naturally imageless plan to lean on. The condition is therefore created deliberately here
+    /// rather than encoded into the fixture: the fixture's job is to be a faithful capture of the
+    /// LDP, and edge-case coverage belongs in the test that needs it.
+    /// </summary>
+    private const string ImagelessPlanKey = "1n992v6";   // "Swallow", 1 unit
 
     private readonly string _dbPath;
     private readonly string _storeRoot;
@@ -59,8 +78,9 @@ public class ApiContractTests : IDisposable
 
         var env = new FakeEnv(apiRoot);
         var claude = new UnconfiguredClaudeClient();
-        var planSource = new SampleListingProvider(env);
-        var listings = new FixtureListingService(planSource);
+        var sampleProvider = new SampleListingProvider(env);
+        var planSource = new ImagelessPlanSource(sampleProvider, ImagelessPlanKey);
+        var listings = new FixtureListingService(sampleProvider);
         var mock = new MockAnalysisService(env);
         var numerology = new NumerologyService();
         var site = new SiteAnalysisService();
@@ -109,7 +129,7 @@ public class ApiContractTests : IDisposable
 
         Assert.Equal(MultiPlan, body.PropertyKey);
         Assert.Equal("demo", body.Mode);
-        Assert.Equal(5, body.Subjects.Count);
+        Assert.Equal(20, body.Subjects.Count);
 
         var unscored = body.Subjects.Where(s => s.Sets.Count == 0).ToList();
         var only = Assert.Single(unscored);
@@ -118,7 +138,7 @@ public class ApiContractTests : IDisposable
         // The imageless plan is still present, with its identity intact, so the section's
         // footprint is known at first paint and nothing shifts when the grades land.
         Assert.Equal("floorplan", only.SubjectType);
-        Assert.Equal("2 Bed 1 Bath", only.PlanName);
+        Assert.Equal("Swallow", only.PlanName);
     }
 
     [Fact]
@@ -174,17 +194,17 @@ public class ApiContractTests : IDisposable
     public async Task Units_ArePresent_AndCarryNoGradeField()
     {
         var body = await Subjects();
-        var plan = body.Subjects.First(s => s.PlanKey == "rk-101");
+        var plan = body.Subjects.First(s => s.PlanKey == ScoredPlanKey);
 
         Assert.NotEmpty(plan.Units);
-        Assert.Contains(plan.Units, u => u.UnitNumber == "444");
+        Assert.Contains(plan.Units, u => u.UnitNumber == ScoredUnitNumber);
 
         var json = JsonSerializer.Serialize(plan.Units[0], ApiJson);
         Assert.DoesNotContain("\"grade\"", json, StringComparison.Ordinal);
         Assert.DoesNotContain("\"score\"", json, StringComparison.Ordinal);
 
         // Read-time only: no unit ever becomes a subject, and nothing about it is stored.
-        Assert.DoesNotContain(await _db.Subjects.ToListAsync(), s => s.Id.Contains("444", StringComparison.Ordinal));
+        Assert.DoesNotContain(await _db.Subjects.ToListAsync(), s => s.Id.Contains(ScoredUnitNumber, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -266,7 +286,7 @@ public class ApiContractTests : IDisposable
     public async Task Report_ReturnsGzippedBody_WithLongCacheControl()
     {
         var body = await Subjects();
-        var scored = body.Subjects.First(s => s.PlanKey == "rk-101");
+        var scored = body.Subjects.First(s => s.PlanKey == ScoredPlanKey);
         _subjects.Request.Headers.AcceptEncoding = "gzip";
 
         var result = Assert.IsType<FileContentResult>(
@@ -366,7 +386,7 @@ public class ApiContractTests : IDisposable
     public async Task Refine_ReturnsPersistedFalse_AndWritesNothing()
     {
         var body = await Subjects();
-        var subject = body.Subjects.First(s => s.PlanKey == "rk-103");
+        var subject = body.Subjects.First(s => s.PlanKey == UnorientedPlanKey);
         var before = await CountRowsAsync();
 
         var result = Assert.IsType<OkObjectResult>(await _analysis.Refine(
@@ -381,7 +401,7 @@ public class ApiContractTests : IDisposable
     public async Task Refine_WithRenterOrientation_ScoresVastuThatTheStoredGradeCannot()
     {
         var body = await Subjects();
-        var subject = body.Subjects.First(s => s.PlanKey == "rk-103");
+        var subject = body.Subjects.First(s => s.PlanKey == UnorientedPlanKey);
 
         var stored = subject.Sets.Single(g => g.PrincipleSet == PrincipleSets.Vastu);
         Assert.Equal(AnalysisStatuses.InsufficientEvidence, stored.Status);
@@ -399,12 +419,12 @@ public class ApiContractTests : IDisposable
     public async Task Refine_NeverPublishesTheSessionScore_TheStoredRowIsUntouched()
     {
         var body = await Subjects();
-        var subject = body.Subjects.First(s => s.PlanKey == "rk-103");
+        var subject = body.Subjects.First(s => s.PlanKey == UnorientedPlanKey);
 
         await _analysis.Refine(new RefineRequest(subject.SubjectId, PrincipleSets.Vastu, "north"), default);
 
         var after = await Subjects();
-        var stored = after.Subjects.First(s => s.PlanKey == "rk-103")
+        var stored = after.Subjects.First(s => s.PlanKey == UnorientedPlanKey)
             .Sets.Single(g => g.PrincipleSet == PrincipleSets.Vastu);
 
         Assert.Equal(AnalysisStatuses.InsufficientEvidence, stored.Status);
@@ -416,7 +436,7 @@ public class ApiContractTests : IDisposable
     public async Task Refine_IsDeterministic_SameInputSameScore()
     {
         var body = await Subjects();
-        var subject = body.Subjects.First(s => s.PlanKey == "rk-103");
+        var subject = body.Subjects.First(s => s.PlanKey == UnorientedPlanKey);
         var request = new RefineRequest(subject.SubjectId, PrincipleSets.FengShui, "southeast");
 
         var first = Assert.IsType<RefineResponse>(
@@ -524,6 +544,25 @@ public class ApiContractTests : IDisposable
         public string EnvironmentName { get; set; } = "Development";
     }
 
+    /// <summary>
+    /// The real Enzo fixture with exactly one plan's image removed.
+    ///
+    /// <see cref="SubjectService"/> re-reads <c>PlanImageUrl</c> from the plan source on every
+    /// materialization, so an imageless subject cannot be arranged by editing the database — it
+    /// has to come from the source. Wrapping the provider keeps the fixture itself an honest
+    /// capture of the LDP while still exercising the unscored-subject contract.
+    /// </summary>
+    private sealed class ImagelessPlanSource(IPlanSource inner, string planKey) : IPlanSource
+    {
+        public async Task<IReadOnlyList<ScrapedPlan>?> GetPlansAsync(string propertyKey, CancellationToken ct)
+        {
+            var plans = await inner.GetPlansAsync(propertyKey, ct);
+            return plans?.Select(p => p.RentalKey == planKey
+                ? p with { AttachmentId = null, PlanImageUrl = null }
+                : p).ToList();
+        }
+    }
+
     private sealed class UnconfiguredClaudeClient : IClaudeClient
     {
         public bool IsConfigured => false;
@@ -533,7 +572,7 @@ public class ApiContractTests : IDisposable
     }
 
     /// <summary>
-    /// The offline listing surface: the single-listing fixture for "sample", not-found for
+    /// The offline listing surface: the single-listing fixture for "tk93cec", not-found for
     /// anything else (including the multi-plan property, whose environment resolves to unknown
     /// without a network call).
     /// </summary>

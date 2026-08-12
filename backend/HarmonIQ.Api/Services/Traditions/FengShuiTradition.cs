@@ -14,7 +14,6 @@ public sealed class FengShuiTradition : ITradition
 {
     public string Id => PrincipleSets.FengShui;
     public string DisplayName => "Feng Shui";
-    public string Culture => "Chinese";
     public int Order => 1;
     public string RulesVersion => "fengshui-2.0";
     public bool RequiresOrientation => false;
@@ -133,7 +132,7 @@ public sealed class FengShuiTradition : ITradition
     }
 
     public string InterpretPrompt(string factSheet, string? orientationHint) =>
-        InterpretPromptBuilder.Build(DisplayName, Culture, Doctrine, factSheet, orientationHint);
+        InterpretPromptBuilder.Build(DisplayName, Doctrine, factSheet, orientationHint);
 
     private const string Doctrine = """
 Feng Shui reads a home as a vessel for qi (氣) — how it enters, circulates, and settles. Work from

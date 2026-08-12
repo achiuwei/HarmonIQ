@@ -7,13 +7,25 @@ namespace HarmonIQ.Api.Models;
 /// is there and takes no view — and carries the tradition's id on a stage-3 interpretation finding.
 /// Scoring reads the tagged ones; the untagged facts render on the report's room cards.
 /// </summary>
+/// <param name="Severity">
+/// The magnitude of an adverse reading. Optional, and live reads often omit it — so it is a
+/// weight, never the signal for whether the configuration is there at all.
+/// </param>
+/// <param name="Present">
+/// Whether the drawing shows the configuration this <paramref name="RuleId"/> names. For the
+/// adverse rules (nearly all of them) present means unsatisfied; for a positive-evidence rule it
+/// means satisfied. Defaults to true because a model that files a finding against a rule is
+/// reporting that rule's configuration unless it says otherwise — the opposite default would let
+/// an omitted field silently clear a violation.
+/// </param>
 public record LensFinding(
     string RuleId,
     string Principle,
     string Observation,
     string Tradition,
     double Confidence,
-    string? Severity);
+    string? Severity,
+    bool Present = true);
 
 /// <summary>
 /// Stage-1 perception for a single room photo: the plain facts the image shows, with no tradition

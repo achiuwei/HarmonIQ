@@ -79,13 +79,19 @@ its prompt, its site catalogue, and its numerology live together, so someone who
 can review all of it at once. Implementations are pure, stateless singletons — callable from
 read-time paths with no DI scope and no database.
 
-| Id | Display name | Culture | Order | `RulesVersion` | Orientation-gated | Reads wǔxíng |
-|---|---|---|---|---|---|---|
-| `fengshui` | Feng Shui | Chinese | 1 | `fengshui-2.0` | no | **yes** |
-| `vastu` | Vastu Shastra | Indian | 2 | `vastu-2.0` | **yes** | no |
-| `pungsu` | Pungsu-jiri | Korean | 3 | `pungsu-1.0` | no | **yes** |
-| `kaso` | Kasō | Japanese | 4 | `kaso-1.0` | **yes** | **yes** |
-| `phongthuy` | Phong Thủy | Vietnamese | 5 | `phongthuy-1.0` | no | **yes** |
+| Id | Display name | Order | `RulesVersion` | Orientation-gated | Reads wǔxíng |
+|---|---|---|---|---|---|
+| `fengshui` | Feng Shui | 1 | `fengshui-2.0` | no | **yes** |
+| `vastu` | Vastu Shastra | 2 | `vastu-2.0` | **yes** | no |
+| `pungsu` | Pungsu-jiri | 3 | `pungsu-1.0` | no | **yes** |
+| `kaso` | Kasō | 4 | `kaso-1.0` | **yes** | **yes** |
+| `phongthuy` | Phong Thủy | 5 | `phongthuy-1.0` | no | **yes** |
+
+A tradition's culture of origin is deliberately **not** modelled. It was once carried as
+`ITradition.Culture` and rendered as a renter-facing label ("Korea — Pungsu-jiri"); country and
+culture names have since been removed from every renter-facing surface, so the field was deleted
+rather than blanked. Doctrine bodies still name related traditions by culture where they explain a
+genuine divergence — that is doctrinal content, not a label.
 
 **`TraditionRegistry` is the single place that knows which traditions exist.** Everything downstream
 — scoring, gating, numerology, prompts, search synonyms, rules versions, display order — resolves
@@ -97,7 +103,7 @@ The interface surface, and why each member is there:
 
 | Member | Purpose |
 |---|---|
-| `Id` / `DisplayName` / `Culture` / `Order` | Wire id and renter-facing labels. Order is display order — **never** "highest score first", which would rank traditions. |
+| `Id` / `DisplayName` / `Order` | Wire id and renter-facing label. Order is display order — **never** "highest score first", which would rank traditions. |
 | `RulesVersion` | Scoped per tradition so a Kasō rule change never invalidates Feng Shui analyses (FR-41). |
 | `RequiresOrientation` | Declares the orientation gate. Vastu's directional room placement and Kasō's kimon axis are absolute-directional; the remainder would be "the tradition with the tradition removed". |
 | `UsesWuxing` | True for the four Sinitic traditions. **False for Vastu** — its pancha bhuta are a different five (earth/water/fire/air/space) and cannot ride in the same `ElementBalance` shape, so its section is omitted rather than zeroed. |

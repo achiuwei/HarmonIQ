@@ -113,7 +113,12 @@ public class FloorPlanLensService(
                         new
                         {
                             type = "image",
-                            source = new { type = "base64", media_type = "image/png", data = Convert.ToBase64String(planImage) },
+                            source = new
+                            {
+                                type = "base64",
+                                media_type = ImageMediaType.Detect(planImage),
+                                data = Convert.ToBase64String(planImage),
+                            },
                         },
                         new { type = "text", text = "Record the adjacency-only observation for this floor plan." },
                     },

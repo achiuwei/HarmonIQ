@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using HarmonIQ.Api.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -6,7 +7,12 @@ namespace HarmonIQ.Api.Services;
 
 public interface IGeoContextService
 {
-    Task<ListingEnvironment> GetEnvironmentAsync(string listingId, string address, CancellationToken ct);
+    /// <summary>
+    /// The site environment around a listing. <paramref name="point"/> is the listing's own
+    /// published position when the page carried one; supplying it skips geocoding entirely.
+    /// </summary>
+    Task<ListingEnvironment> GetEnvironmentAsync(
+        string listingId, string address, GeoPoint? point, CancellationToken ct);
 }
 
 public class GeoContextService(
@@ -15,12 +21,13 @@ public class GeoContextService(
 {
     private const string UserAgent = "HarmonIQ-Hackathon-Demo/1.0 (contact: achiuwei@costar.com)";
 
-    public async Task<ListingEnvironment> GetEnvironmentAsync(string listingId, string address, CancellationToken ct)
+    public async Task<ListingEnvironment> GetEnvironmentAsync(
+        string listingId, string address, GeoPoint? point, CancellationToken ct)
     {
         return await cache.GetOrCreateAsync($"geo:{listingId}", async e =>
         {
             e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
-            try { return await BuildAsync(address, ct); }
+            try { return await BuildAsync(address, point, ct); }
             catch (Exception ex)
             {
                 log.LogWarning(ex, "Geo prefill failed for {Address}; returning unknowns", address);
@@ -29,19 +36,30 @@ public class GeoContextService(
         }) ?? ListingEnvironment.AllUnknown;
     }
 
-    private async Task<ListingEnvironment> BuildAsync(string address, CancellationToken ct)
+    private async Task<ListingEnvironment> BuildAsync(string address, GeoPoint? point, CancellationToken ct)
     {
         var http = httpFactory.CreateClient();
         http.Timeout = TimeSpan.FromSeconds(10);
         http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 
-        // 1) Geocode (Nominatim requires a UA identifying the app).
-        var geoUrl = $"{cfg["Geo:GeocoderUrl"]}?q={Uri.EscapeDataString(address)}&format=json&limit=1";
-        using var geoDoc = JsonDocument.Parse(await http.GetStringAsync(geoUrl, ct));
-        var first = geoDoc.RootElement.EnumerateArray().FirstOrDefault();
-        if (first.ValueKind != JsonValueKind.Object) return ListingEnvironment.AllUnknown;
-        var lat = double.Parse(first.GetProperty("lat").GetString()!);
-        var lon = double.Parse(first.GetProperty("lon").GetString()!);
+        // 1) Position. The listing's own published coordinates are preferred over geocoding its
+        // address: a scraped street address is often partial ("3100 Martin"), and a geocode that
+        // resolves nothing takes every side of the environment down with it.
+        double lat, lon;
+        if (point is not null)
+        {
+            (lat, lon) = (point.Latitude, point.Longitude);
+        }
+        else
+        {
+            // Nominatim requires a UA identifying the app.
+            var geoUrl = $"{cfg["Geo:GeocoderUrl"]}?q={Uri.EscapeDataString(address)}&format=json&limit=1";
+            using var geoDoc = JsonDocument.Parse(await http.GetStringAsync(geoUrl, ct));
+            var first = geoDoc.RootElement.EnumerateArray().FirstOrDefault();
+            if (first.ValueKind != JsonValueKind.Object) return ListingEnvironment.AllUnknown;
+            lat = double.Parse(first.GetProperty("lat").GetString()!, CultureInfo.InvariantCulture);
+            lon = double.Parse(first.GetProperty("lon").GetString()!, CultureInfo.InvariantCulture);
+        }
 
         // 2) Overpass: roads/water/buildings near the point. Failures → sides stay unknown.
         var sides = new Dictionary<string, (string road, string water, string structures, string slope)>

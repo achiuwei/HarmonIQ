@@ -11,7 +11,7 @@ namespace HarmonIQ.Tests;
 public class TraditionRegistryTests
 {
     [Fact]
-    public void AllFiveCulturesArePresent_InDisplayOrder()
+    public void AllFiveTraditionsArePresent_InDisplayOrder()
     {
         Assert.Equal(
             new[] { "fengshui", "vastu", "pungsu", "kaso", "phongthuy" },
@@ -34,7 +34,6 @@ public class TraditionRegistryTests
         {
             Assert.False(string.IsNullOrWhiteSpace(t.Id));
             Assert.False(string.IsNullOrWhiteSpace(t.DisplayName));
-            Assert.False(string.IsNullOrWhiteSpace(t.Culture));
             Assert.False(string.IsNullOrWhiteSpace(t.RulesVersion));
             Assert.False(string.IsNullOrWhiteSpace(t.TraditionPhrase));
             Assert.NotEmpty(t.SearchSynonyms);
@@ -167,7 +166,7 @@ public class TraditionRegistryTests
         Assert.Null(SynonymMap.Normalize("   "));
     }
 
-    // ---------------- the prompts are genuinely per-culture ----------------
+    // ---------------- the prompts are genuinely per-tradition ----------------
 
     [Fact]
     public void EveryTraditionHasADistinctInterpretationPrompt()
@@ -180,7 +179,6 @@ public class TraditionRegistryTests
         foreach (var (t, prompt) in TraditionRegistry.Ordered.Zip(prompts))
         {
             Assert.Contains(t.DisplayName, prompt, StringComparison.Ordinal);
-            Assert.Contains(t.Culture, prompt, StringComparison.Ordinal);
         }
     }
 

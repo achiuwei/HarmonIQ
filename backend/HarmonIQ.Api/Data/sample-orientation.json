@@ -1,28 +1,23 @@
 {
-  "sample-multiplan": {
-    "rk-101": [
-      { "unitNumber": "101", "building": "A", "level": 1, "facingDegrees": 5 },
-      { "unitNumber": "201", "building": "A", "level": 2, "facingDegrees": 10 },
-      { "unitNumber": "301", "building": "A", "level": 3, "facingDegrees": 0 },
-      { "unitNumber": "401", "building": "A", "level": 4, "facingDegrees": 355 },
-      { "unitNumber": "501", "building": "A", "level": 5, "facingDegrees": 15 },
-      { "unitNumber": "601", "building": "A", "level": 6, "facingDegrees": 8 },
-      { "unitNumber": "701", "building": "A", "level": 7, "facingDegrees": 12 },
-      { "unitNumber": "801", "building": "A", "level": 8, "facingDegrees": 2 },
-      { "unitNumber": "901", "building": "A", "level": 9, "facingDegrees": 20 },
-      { "unitNumber": "1001", "building": "A", "level": 10, "facingDegrees": 200 }
+  "349246f": {
+    "0xbkbx0": [
+      { "unitNumber": "3350", "building": "3", "level": 3, "facingDegrees": 5 },
+      { "unitNumber": "3136", "building": "3", "level": 1, "facingDegrees": 10 },
+      { "unitNumber": "3455", "building": "3", "level": 4, "facingDegrees": 0 },
+      { "unitNumber": "3152", "building": "3", "level": 1, "facingDegrees": 355 },
+      { "unitNumber": "3158", "building": "3", "level": 1, "facingDegrees": 15 },
+      { "unitNumber": "3457", "building": "3", "level": 4, "facingDegrees": 8 },
+      { "unitNumber": "3451", "building": "3", "level": 4, "facingDegrees": 12 },
+      { "unitNumber": "3458", "building": "3", "level": 4, "facingDegrees": 2 },
+      { "unitNumber": "3555", "building": "3", "level": 5, "facingDegrees": 200 }
     ],
-    "rk-102": [
-      { "unitNumber": "113", "building": "B", "level": 1, "facingDegrees": 0 },
-      { "unitNumber": "213", "building": "B", "level": 2, "facingDegrees": 10 },
-      { "unitNumber": "313", "building": "B", "level": 3, "facingDegrees": 5 },
-      { "unitNumber": "413", "building": "B", "level": 4, "facingDegrees": 350 },
-      { "unitNumber": "502b", "building": "B", "level": 5, "facingDegrees": 15 },
-      { "unitNumber": "602b", "building": "B", "level": 6, "facingDegrees": 180 },
-      { "unitNumber": "702b", "building": "B", "level": 7, "facingDegrees": 190 },
-      { "unitNumber": "802b", "building": "B", "level": 8, "facingDegrees": 175 },
-      { "unitNumber": "902b", "building": "B", "level": 9, "facingDegrees": 185 },
-      { "unitNumber": "1002b", "building": "B", "level": 10, "facingDegrees": 200 }
+    "bmgrv28": [
+      { "unitNumber": "3356", "building": "3", "level": 3, "facingDegrees": 0 },
+      { "unitNumber": "3156", "building": "3", "level": 1, "facingDegrees": 10 },
+      { "unitNumber": "3466", "building": "3", "level": 4, "facingDegrees": 5 },
+      { "unitNumber": "3566", "building": "3", "level": 5, "facingDegrees": 180 },
+      { "unitNumber": "3409", "building": "3", "level": 4, "facingDegrees": 190 },
+      { "unitNumber": "3166", "building": "3", "level": 1, "facingDegrees": 175 }
     ]
   }
 }

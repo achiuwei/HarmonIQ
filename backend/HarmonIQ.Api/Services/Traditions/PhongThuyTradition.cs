@@ -16,7 +16,6 @@ public sealed class PhongThuyTradition : ITradition
 {
     public string Id => PrincipleSets.PhongThuy;
     public string DisplayName => "Phong Thủy";
-    public string Culture => "Vietnamese";
     public int Order => 5;
     public string RulesVersion => "phongthuy-1.0";
     public bool RequiresOrientation => false;
@@ -125,7 +124,7 @@ public sealed class PhongThuyTradition : ITradition
     }
 
     public string InterpretPrompt(string factSheet, string? orientationHint) =>
-        InterpretPromptBuilder.Build(DisplayName, Culture, Doctrine, factSheet, orientationHint);
+        InterpretPromptBuilder.Build(DisplayName, Doctrine, factSheet, orientationHint);
 
     private const string Doctrine = """
 Phong Thủy shares its form-school (hình thế) foundation with Chinese Feng Shui, and where the two
