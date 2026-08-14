@@ -11,8 +11,13 @@ public static class Prompts
     /// <c>record_room_observation</c> (tradition-tagged findings + elementBalance) to
     /// <c>record_room_perception</c> (untagged facts + materials), so a v2.0 observation cannot be
     /// read against the new shape and MUST NOT be reused. This bump is what forces re-perception.
+    ///
+    /// v3.1 — <c>record_interpretation</c> gains a required <c>satisfied</c>, the polarity signal
+    /// the floor-plan tool already had as <c>present</c>. A v3.0 interpretation carries no polarity
+    /// at all, so it can only be read the old (broken) way; the bump forces re-interpretation
+    /// rather than leaving a cached one to be re-derived into the same zero score.
     /// </summary>
-    public const string PromptVersion = "v3.0";
+    public const string PromptVersion = "v3.1";
 
     /// <summary>
     /// Phrases that must never appear in any prompt or rule text (design §10 / NFR-8).
@@ -170,9 +175,23 @@ Hard rules:
                             principle = new { type = "string" },
                             observation = new { type = "string" },
                             confidence = new { type = "number", minimum = 0, maximum = 1 },
+                            // Required, and the sole polarity signal — the same correction the
+                            // floor-plan tool's `present` already carries. Without it the deriving
+                            // code had to infer polarity from `severity`, and since a model asked
+                            // for findings attaches a severity to every one of them, EVERY live
+                            // photo subject scored 0 on interiors. Demo mode hid it: the mock
+                            // fixture supplies findings both with and without a severity.
+                            satisfied = new
+                            {
+                                type = "boolean",
+                                description =
+                                    "True when the home MEETS this principle as this tradition "
+                                    + "reads it; false when it does not. Report both kinds — a "
+                                    + "principle the home satisfies is a finding, not a silence.",
+                            },
                             severity = new { type = "string", @enum = new[] { "minor", "moderate", "major" } },
                         },
-                        required = new[] { "ruleId", "principle", "observation", "confidence" },
+                        required = new[] { "ruleId", "principle", "observation", "confidence", "satisfied" },
                     },
                 },
                 suggestions = new

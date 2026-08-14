@@ -18,6 +18,17 @@ namespace HarmonIQ.Api.Models;
 /// reporting that rule's configuration unless it says otherwise — the opposite default would let
 /// an omitted field silently clear a violation.
 /// </param>
+/// <param name="Satisfied">
+/// The <b>interpretation</b> path's polarity signal: whether the home meets this principle as the
+/// tradition reads it. Deliberately separate from <paramref name="Present"/>, which the floor-plan
+/// path uses: <c>Present</c> resolves to a polarity only through the rule catalogue that knows
+/// which rule ids name adverse configurations, and an interpretation's rule ids are free-form
+/// prose ("sightline", "greenery"), so there is no catalogue to ask.
+///
+/// Null means a finding recorded before this field existed. Those fall back to the old
+/// severity-inference at the point of use, which is wrong in a known direction — it reads every
+/// legacy live finding as unsatisfied — rather than silently flipping stored history to satisfied.
+/// </param>
 public record LensFinding(
     string RuleId,
     string Principle,
@@ -25,7 +36,8 @@ public record LensFinding(
     string Tradition,
     double Confidence,
     string? Severity,
-    bool Present = true);
+    bool Present = true,
+    bool? Satisfied = null);
 
 /// <summary>
 /// Stage-1 perception for a single room photo: the plain facts the image shows, with no tradition

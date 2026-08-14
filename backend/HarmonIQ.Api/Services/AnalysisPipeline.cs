@@ -364,17 +364,41 @@ public static class AnalysisDerivation
 
         if (Interpretation(input, principleSet) is { } interpretation)
         {
+            // Polarity comes from the finding's own claim, not from whether it happens to carry a
+            // severity — the same correction PlanLens already applies via `Present`. Inferring it
+            // from severity made the interiors lens unable to award credit at all on the live path:
+            // a model asked for findings attaches a severity to every one, so every rule read as
+            // broken and every live photo subject scored interiors 0 (101 Limone 33/F, 106
+            // Tangerine 30/F, while the same building's floor plans scored 55-93). Demo mode hid it
+            // because the mock fixture carries findings both with and without a severity.
+            //
+            // Legacy findings predate `satisfied` and fall back to the old inference rather than
+            // being reinterpreted: it is wrong in a known direction (everything unsatisfied), which
+            // is the same answer those rows already stored, instead of silently promoting stored
+            // history to satisfied.
             var interpreted = interpretation.Findings
                 .Where(f => f.Confidence >= FindingConfidenceFloor)
                 .Select(f => new RuleOutcome(
-                    f.RuleId, principleSet, true, f.Severity is null, Weight(f.Severity), f.Observation))
+                    f.RuleId,
+                    principleSet,
+                    true,
+                    f.Satisfied ?? f.Severity is null,
+                    Weight(f.Severity),
+                    f.Observation))
                 .ToList();
 
-            var covered = Math.Clamp(perceptionCoverage * Math.Clamp(interpretation.Coverage, 0.0, 1.0), 0.0, 1.0);
+            // Coverage is perception's number alone, matching the fallback branch below and the
+            // comment above: it measures how much the photographs showed. It previously also
+            // multiplied in interpretation.Coverage, which discounted the same evidence twice —
+            // two independent model self-reports of ~0.6 compound to ~0.36, and every live photo
+            // subject landed under the 0.5 confidence floor while floor-plan subjects on the same
+            // building scored fine. Note the plan path's product is NOT the same shape: one of its
+            // two factors (RuleEvaluation.Coverage) is computed from a fixed rule catalogue, so it
+            // is anchored rather than self-reported. See docs/photo-path-coverage.md.
             return new LensResult(
                 LensResult.Interiors,
                 RuleEvaluation.NormalizedScore(interpreted),
-                interpreted.Count == 0 ? 0.0 : covered,
+                interpreted.Count == 0 ? 0.0 : perceptionCoverage,
                 interpreted);
         }
 

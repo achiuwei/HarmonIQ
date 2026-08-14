@@ -265,13 +265,50 @@ public class PromptSchemaTests
     }
 
     /// <summary>
-    /// v3.0 is the perception/interpretation split. The room tool's shape changed incompatibly
-    /// (tagged findings + elementBalance → untagged facts + materials), so v2.0 observations must
-    /// not be reused; this version string is the only thing that forces re-perception.
+    /// v3.0 was the perception/interpretation split. v3.1 adds the required <c>satisfied</c> flag
+    /// to <c>record_interpretation</c>: a v3.0 interpretation carries no polarity at all, so it can
+    /// only be read the old, broken way and must not be reused. This version string is the only
+    /// thing that forces re-interpretation.
+    ///
+    /// The assertion is deliberately exact so a bump is always a decision, never a side effect.
     /// </summary>
     [Fact]
-    public void PromptVersion_IsV3()
+    public void PromptVersion_IsV31()
     {
-        Assert.Equal("v3.0", Prompts.PromptVersion);
+        Assert.Equal("v3.1", Prompts.PromptVersion);
+    }
+
+    /// <summary>
+    /// The polarity signal must be REQUIRED. Optional was the bug: the deriving code fell back to
+    /// "no severity means satisfied", and a model asked for findings attaches a severity to every
+    /// one, so no live photo subject could ever score above zero on interiors.
+    /// </summary>
+    [Fact]
+    public void InterpretationTool_RequiresSatisfied_AsTheSolePolaritySignal()
+    {
+        var items = Serialize(Prompts.InterpretationTool)
+            .GetProperty("input_schema").GetProperty("properties")
+            .GetProperty("findings").GetProperty("items");
+
+        var required = items.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.Contains("satisfied", required);
+        Assert.DoesNotContain("severity", required);
+
+        var satisfied = items.GetProperty("properties").GetProperty("satisfied");
+        Assert.Equal("boolean", satisfied.GetProperty("type").GetString());
+    }
+
+    /// <summary>
+    /// The prompt has to say what the flag means, not just declare it. The floor-plan prompt
+    /// already carries the equivalent sentence for <c>present</c>.
+    /// </summary>
+    [Fact]
+    public void InterpretPrompt_ForbidsInferringPolarityFromSeverity()
+    {
+        var prompt = HarmonIQ.Api.Services.Traditions.InterpretPromptBuilder.Build(
+            "Feng Shui", "doctrine", "facts", null);
+
+        Assert.Contains("satisfied", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("never leave it to be inferred from", prompt, StringComparison.OrdinalIgnoreCase);
     }
 }
