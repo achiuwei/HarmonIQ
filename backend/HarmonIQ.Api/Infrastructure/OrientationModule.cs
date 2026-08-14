@@ -1,3 +1,4 @@
+using HarmonIQ.Api.Commands;
 using HarmonIQ.Api.Services.Orientation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,5 +26,9 @@ public class OrientationModule : IServiceModule
         {
             services.AddSingleton<IOrientationProvider, FixtureOrientationProvider>();
         }
+
+        // Research-only: measures whether an OSM footprint could ever pin true north for a site.
+        // Feeds no scoring path — see docs/orientation-data-sources.md §5.
+        services.AddSingleton<IHarmonIQCommand, OutlineProbeCommand>();
     }
 }

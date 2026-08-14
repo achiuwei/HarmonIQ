@@ -97,6 +97,12 @@ rather than `[1482.5, 1144.65]` (pixels).
 
 ## 5. Fallback if `geojson_url` is null
 
+> **Superseded at the one site where it was checked** (2026-08-12) — see
+> [orientation-osm-outline-identifiability.md](orientation-osm-outline-identifiability.md). The
+> building-set method below needs several buildings per site; Enzo has **one** in OSM, so the
+> coverage table here does not apply to it. The numbers below remain synthetic and were never
+> reproduced against real footprints.
+
 If Unit Map yields only map-space polygons, true north can be recovered by aligning the map-space
 floor outline to a real building footprint (OSM via Overpass — `GeoContextService` already queries
 that host; `out geom` instead of `out center` returns full polygons).
