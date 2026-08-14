@@ -13,6 +13,18 @@ namespace HarmonIQ.Api.Services;
 /// Both keys are the listings' own apartments.com keys rather than invented ids, because
 /// apartments-web's per-plan chips key off the LDP's <c>data-rentalkey</c> — a fixture using
 /// made-up keys could never line up with the consumer side.
+///
+/// Both keys now match apartments-web's seeded fixture exactly, so the two repos demo the same two
+/// properties. <c>349246f</c> is verified to resolve on both <c>www.apartments.com</c> and
+/// <c>www-tsm.apartments.com</c>, so the multi-plan chips render locally on either side.
+///
+/// <b><c>tk93cec</c> resolves on public <c>www</c> only — it 404s on <c>www-tsm</c></b>, the dataset
+/// apartments-web runs against. The keys agree, so nothing silently mismatches, but the
+/// single-listing score card has no locally-renderable demo on the consumer side; use the
+/// multi-plan path for that. Closing it needs either the local dataset to carry <c>tk93cec</c>, or a
+/// fresh scrape into <c>Data/sample-listing.json</c> (plus photos) of a listing <c>www-tsm</c>
+/// already resolves, with <see cref="ListingId"/> repointed to match. See the apartments-web handoff
+/// doc §4.
 /// </summary>
 public class SampleListingProvider : IPlanSource
 {

@@ -39,8 +39,8 @@ public class ListingSourceTests
     public void KeepsTheSlugFormOfAKeyThatCarriesOne()
     {
         Assert.Equal(
-            "https://www.apartments.com/beck-at-wells-branch-austin-tx/n3cqt3m/",
-            ListingSource.UrlFor(null, "beck-at-wells-branch-austin-tx~n3cqt3m"));
+            "https://www.apartments.com/enzo-irvine-ca/349246f/",
+            ListingSource.UrlFor(null, "enzo-irvine-ca~349246f"));
     }
 
     /// <summary>

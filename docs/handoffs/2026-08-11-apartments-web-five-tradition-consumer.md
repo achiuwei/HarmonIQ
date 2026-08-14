@@ -181,6 +181,18 @@ best-qualifying single subject on a multi-plan property, **never a cross-plan bl
   `Id`; its composition remains an internal detail.
 - **Locally, nothing is published** — see the correction in §2. The feed returns an empty page, not
   an error. Search will 409 with no workaround; that part is intended.
+- **The single-listing demo has no locally-renderable listing, by choice.** Both repos are now keyed
+  to the same two Irvine properties — `349246f` (Enzo) for the multi-plan chips and `tk93cec`
+  (108 Ambiance) for the score card — so the keys agree and nothing silently mismatches on a feed
+  switch. But `tk93cec` **404s on `www-tsm.apartments.com`**, so those rows do not render against
+  the Austin-seeded local dataset. That is the accepted cost of dropping the Austin fixtures:
+  key agreement across the repos was worth more than a local demo of one card. **Use the multi-plan
+  path locally** — `349246f` is verified on both `www` and `www-tsm`. Closing the gap needs either
+  the local dataset to carry `tk93cec`, or a fresh scrape into `Data/sample-listing.json` of a
+  listing `www-tsm` already resolves, with `SampleListingProvider.ListingId` repointed to match.
+- **The `harmoniq-demo-*` rows are synthetic shape coverage, not listings.** They carry the
+  unknown-`principleSet` fallback and the fully-unscored path that the retired Austin rows used to
+  cover. Do not expect them to resolve to a real LDP.
 
 ---
 
